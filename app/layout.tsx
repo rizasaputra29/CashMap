@@ -9,30 +9,33 @@ import { Toaster } from '@/components/ui/toaster';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Financial Tracker',
+  // *** UPDATE: Change title ***
+  title: 'Cash Map',
   description: 'Track your income, expenses, and savings goals',
-  // Menggunakan site.webmanifest yang lebih lengkap
-  manifest: '/site.webmanifest', 
-  themeColor: '#000000',
+  manifest: '/site.webmanifest',
+  themeColor: '#000000', // Or '#ffffff' depending on your manifest
   icons: {
-    // Favicon desktop menggunakan ikon resolusi tertinggi
-    icon: '/android-chrome-512x512.png', 
-    // Ikon Home Screen iOS
-    apple: '/apple-touch-icon.png', 
-    // Menyertakan ikon ukuran lain (jika diperlukan oleh browser/OS spesifik)
+    // Keep existing references as they match your public folder files
+    icon: '/android-chrome-512x512.png', // Main icon
+    apple: '/apple-touch-icon.png', // Apple touch icon
     other: [
       {
         rel: 'icon',
         type: 'image/png',
         sizes: '32x32',
-        url: '/favicon-32x32.png',
+        url: '/favicon-32x32.png', //
       },
       {
         rel: 'icon',
         type: 'image/png',
         sizes: '16x16',
-        url: '/favicon-16x16.png',
+        url: '/favicon-16x16.png', //
       },
+       // You might also want to explicitly add favicon.ico if needed by older browsers
+       {
+         rel: 'shortcut icon',
+         url: '/favicon.ico', //
+       },
     ],
   },
 };
@@ -48,7 +51,7 @@ export default function RootLayout({
         <AuthProvider>
           <FinanceProvider>
             {children}
-            <Toaster />
+            <Toaster /> {/* */}
           </FinanceProvider>
         </AuthProvider>
       </body>

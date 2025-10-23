@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Wallet, Mail, Send, Key } from 'lucide-react';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -97,9 +98,9 @@ export default function LoginPage() {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <Link href="/">
-            <div className="p-3 bg-black rounded-lg">
-              <Wallet className="w-8 h-8 text-white" />
-            </div>
+            <div className="p-4 items-center bg-black rounded-2xl">
+                <Image src="/apple-touch-icon.png" alt="Wallet Icon" width={64} height={64} />
+              </div>
             </Link>
           </div>
           <CardTitle className="text-3xl font-bold">Financial Tracker</CardTitle>

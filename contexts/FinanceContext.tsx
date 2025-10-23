@@ -4,6 +4,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
+// ... (Keep existing interfaces: Transaction, BudgetLimit, SavingsGoal) ...
 export interface Transaction {
   id: string;
   userId: string;
@@ -11,7 +12,7 @@ export interface Transaction {
   amount: number;
   category: string;
   description: string;
-  date: string; 
+  date: string;
   createdAt: string;
 }
 
@@ -19,7 +20,7 @@ export interface BudgetLimit {
   id: string;
   userId: string;
   totalBudget: number;
-  dailyLimit: number;
+  dailyLimit: number; // Keep original daily limit for reference if needed
   startDate: string;
   endDate: string;
   isActive: boolean;
@@ -44,13 +45,15 @@ interface FinanceContextType {
   updateTransaction: (id: string, updates: Partial<Omit<Transaction, 'id' | 'userId' | 'createdAt'>>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   setBudgetLimit: (budget: Omit<BudgetLimit, 'id' | 'userId'>) => Promise<void>;
-  // BARU: Fungsi untuk mereset budget
-  resetBudgetLimit: () => Promise<void>; 
+  resetBudgetLimit: () => Promise<void>;
   addSavingsGoal: (goal: Omit<SavingsGoal, 'id' | 'userId'>) => Promise<void>;
   updateSavingsGoal: (id: string, updates: Partial<SavingsGoal>) => Promise<void>;
   deleteSavingsGoal: (id: string) => Promise<void>;
   getDailyExpenses: (date: string) => number;
-  getRemainingDailyBudget: (date: string) => number;
+  // MODIFIED: Function signature description
+  getRemainingDailyBudget: (date: string) => number; // Now calculates dynamically
+  // NEW: Function to get the dynamic daily limit itself
+  getDynamicDailyLimit: (date: string) => number;
   getPeriodExpenses: (start: string, end: string) => number;
   getAdjustedRemainingTotalBudget: () => number;
   fetchFinanceData: () => Promise<void>;
@@ -60,52 +63,69 @@ interface FinanceContextType {
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
-// Helper untuk membuat header otentikasi secara langsung
-const getHeaders = (userId: string) => ({ 
-    'X-User-Id': userId, 
+// ... (Keep existing helpers: getHeaders, formatDate, isDateInPeriod, numberToCleanString) ...
+const getHeaders = (userId: string) => ({
+    'X-User-Id': userId,
     'Content-Type': 'application/json',
 });
 
-// Helper untuk mengubah string/Date dari API menjadi string YYYY-MM-DD
 const formatDate = (dateInput: Date | string): string => {
     const date = new Date(dateInput);
     if (isNaN(date.getTime())) return new Date().toISOString().split('T')[0];
     return date.toISOString().split('T')[0];
 };
 
-// Helper: Memeriksa apakah tanggal berada dalam periode budget
 const isDateInPeriod = (date: string, start: string, end: string): boolean => {
-    // Memastikan perbandingan string tanggal (YYYY-MM-DD)
     return date >= start && date <= end;
 };
 
-// HELPER: Mengubah number menjadi string numerik yang bersih untuk API
 const numberToCleanString = (num: number): string => {
     if (!isFinite(num)) return '0';
-    // Menggunakan toFixed(2) untuk menghindari notasi E dan menghapus desimal jika bulat
     return num.toFixed(2).replace(/\.00$/, '');
+}
+
+// NEW HELPER (similar to the one in dashboard)
+const calculateDaysRemaining = (startDateStr: string, endDateStr: string): number => {
+    const today = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // Set time to noon to avoid timezone issues affecting day difference
+    today.setHours(12, 0, 0, 0);
+    endDate.setHours(12, 0, 0, 0);
+
+    // If today is after the end date, 0 days remaining
+    if (today > endDate) {
+        return 0;
+    }
+
+    const diffTime = endDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // Add 1 because the calculation includes the start day
+    return diffDays + 1;
 }
 
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
-  const { user, isLoading: isAuthLoading } = useAuth(); 
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgetLimit, setBudgetLimitState] = useState<BudgetLimit | null>(null);
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
 
-  const fetchFinanceData = async () => {
-    if (isAuthLoading || !user) return; 
-    
+  // ... (Keep fetchFinanceData, useEffect, addTransaction, updateTransaction, deleteTransaction, setBudgetLimit, resetBudgetLimit, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal, backupData, importData) ...
+    const fetchFinanceData = async () => {
+    if (isAuthLoading || !user) return;
+
     const headers = getHeaders(user.id);
-    
+
     try {
       // 1. Fetch Transactions
       const txnResponse = await fetch('/api/transactions', { headers });
       if (txnResponse.ok) {
         const transactionsData: Transaction[] = await txnResponse.json();
-        const formattedTransactions = transactionsData.map(t => ({ 
-            ...t, 
-            date: formatDate(t.date) 
+        const formattedTransactions = transactionsData.map(t => ({
+            ...t,
+            date: formatDate(t.date)
         }));
         setTransactions(formattedTransactions);
       } else {
@@ -114,7 +134,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
          }
       }
 
-      // 2. Fetch Budget Limit 
+      // 2. Fetch Budget Limit
       const budgetResponse = await fetch('/api/budget', { headers });
       if (budgetResponse.ok) {
           const budgetData: BudgetLimit | null = await budgetResponse.json();
@@ -129,7 +149,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           }
       }
 
-      // 3. Fetch Savings Goals 
+      // 3. Fetch Savings Goals
       const savingsResponse = await fetch('/api/savings', { headers });
       if (savingsResponse.ok) {
           const goalsData: SavingsGoal[] = await savingsResponse.json();
@@ -168,7 +188,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     const response = await fetch('/api/transactions', {
         method: 'POST',
-        headers: getHeaders(user.id), 
+        headers: getHeaders(user.id),
         body: JSON.stringify(payload),
     });
 
@@ -191,7 +211,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     const response = await fetch('/api/transactions', {
         method: 'PUT',
-        headers: getHeaders(user.id), 
+        headers: getHeaders(user.id),
         body: JSON.stringify(payload),
     });
 
@@ -210,7 +230,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     const response = await fetch(`/api/transactions?id=${id}`, {
         method: 'DELETE',
-        headers: getHeaders(user.id), 
+        headers: getHeaders(user.id),
     });
 
     if (response.ok) {
@@ -224,7 +244,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const setBudgetLimit = async (budget: Omit<BudgetLimit, 'id' | 'userId'>) => {
     if (!user) return;
-    
+
     const payload = {
         ...budget,
         totalBudget: numberToCleanString(budget.totalBudget),
@@ -232,23 +252,23 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     };
 
     const response = await fetch('/api/budget', {
-        method: 'POST', 
-        headers: getHeaders(user.id), 
+        method: 'POST',
+        headers: getHeaders(user.id),
         body: JSON.stringify(payload),
     });
-    
+
     if (response.ok) {
         const newBudget: BudgetLimit = await response.json();
-        setBudgetLimitState(newBudget);
+        setBudgetLimitState(newBudget); // Use the state setter directly
     } else {
         throw new Error('Failed to save budget limit.');
     }
   };
-  
+
   // FUNGSI BARU: Mereset Budget (menonaktifkan)
   const resetBudgetLimit = async () => {
     if (!user || !budgetLimit) return;
-    
+
     // 1. Send an update to the server to set isActive=false
     const payload = {
         totalBudget: numberToCleanString(budgetLimit.totalBudget),
@@ -259,8 +279,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     };
 
     const response = await fetch('/api/budget', {
-        method: 'POST', 
-        headers: getHeaders(user.id), 
+        method: 'POST',
+        headers: getHeaders(user.id),
         body: JSON.stringify(payload),
     });
 
@@ -290,7 +310,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         headers: getHeaders(user.id),
         body: JSON.stringify(payload),
     });
-    
+
     if (response.ok) {
         const newGoal: SavingsGoal = await response.json();
         setSavingsGoals((prev) => [...prev, newGoal]);
@@ -303,12 +323,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     if (!user) return;
 
     const updatedBody = {
-        updates: { 
-            ...updates, 
+        updates: {
+            ...updates,
             currentAmount: updates.currentAmount !== undefined ? numberToCleanString(updates.currentAmount) : undefined,
             targetAmount: updates.targetAmount !== undefined ? numberToCleanString(updates.targetAmount) : undefined,
         },
-        id 
+        id
     };
 
     const response = await fetch('/api/savings', {
@@ -346,13 +366,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     if (!user) {
       throw new Error('User not authenticated for backup.');
     }
-    
+
     const response = await fetch('/api/backup', { headers: getHeaders(user.id) });
 
     if (response.ok) {
       const blob = await response.blob();
       const filename = response.headers.get('Content-Disposition')?.split('filename=')[1].replace(/"/g, '') || 'financial_tracker_backup.json';
-      
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -378,12 +398,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     return new Promise<void>((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = async (event) => {
         try {
           const content = event.target?.result;
           const backupData = JSON.parse(content as string);
-          
+
           const response = await fetch('/api/import', {
             method: 'POST',
             headers: getHeaders(user.id),
@@ -410,41 +430,84 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     });
   };
 
-
   // --- FUNGSI UNTUK BUDGET DINAMIS ---
-  
   const getPeriodExpenses = useCallback((start: string, end: string): number => {
     return transactions.reduce((sum, t) => {
-        if (t.type === 'expense' && isDateInPeriod(t.date, start, end)) {
+        // Ensure the date is within the period
+        if (t.type === 'expense' && t.date >= start && t.date <= end) {
             return sum + t.amount;
         }
         return sum;
     }, 0);
   }, [transactions]);
-  
+
+
   const getAdjustedRemainingTotalBudget = useCallback((): number => {
     if (!budgetLimit || !budgetLimit.isActive) return 0;
-    
-    const totalExpensesInPeriod = getPeriodExpenses(budgetLimit.startDate, budgetLimit.endDate);
-    
-    const remaining = budgetLimit.totalBudget - totalExpensesInPeriod;
-    
-    return remaining; 
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    // Calculate expenses ONLY from the start date up to YESTERDAY
+    const startDate = new Date(budgetLimit.startDate);
+    const yesterday = new Date(todayStr);
+    yesterday.setDate(yesterday.getDate() - 1); // Get yesterday's date
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    // Ensure yesterday is not before the start date
+    const effectiveEndDateForPastExpenses = yesterdayStr >= budgetLimit.startDate ? yesterdayStr : budgetLimit.startDate;
+
+    let pastExpenses = 0;
+    if (todayStr > budgetLimit.startDate) { // Only calculate past expenses if today is after the start date
+        pastExpenses = getPeriodExpenses(budgetLimit.startDate, effectiveEndDateForPastExpenses);
+    }
+
+    const remaining = budgetLimit.totalBudget - pastExpenses;
+
+    return remaining;
   }, [budgetLimit, getPeriodExpenses]);
 
-  // --- FUNGSI HELPER LAMA ---
-  const getDailyExpenses = (date: string) => {
+
+  // --- FUNGSI HELPER LAMA (Modified for Clarity) ---
+  const getDailyExpenses = useCallback((date: string): number => {
     return transactions
       .filter((t) => t.type === 'expense' && t.date === date)
       .reduce((sum, t) => sum + t.amount, 0);
-  };
+  }, [transactions]);
 
-  const getRemainingDailyBudget = (date: string) => {
-    if (!budgetLimit || !budgetLimit.isActive) return 0;
+  // --- NEW FUNCTION: Get Dynamic Daily Limit ---
+  const getDynamicDailyLimit = useCallback((date: string): number => {
+      if (!budgetLimit || !budgetLimit.isActive || date < budgetLimit.startDate || date > budgetLimit.endDate) {
+          return 0; // No limit if budget not active or date outside period
+      }
+
+      const remainingTotalBudget = getAdjustedRemainingTotalBudget();
+      const daysRemaining = calculateDaysRemaining(date, budgetLimit.endDate);
+
+      if (daysRemaining <= 0) {
+          // If it's the last day or past the end date, the limit is whatever is left
+          return remainingTotalBudget > 0 ? remainingTotalBudget : 0;
+      }
+
+      const dynamicLimit = remainingTotalBudget / daysRemaining;
+      return dynamicLimit > 0 ? dynamicLimit : 0; // Ensure limit is not negative
+
+  }, [budgetLimit, getAdjustedRemainingTotalBudget]);
+
+
+  // --- MODIFIED FUNCTION: Get Remaining Daily Budget (Dynamic) ---
+  const getRemainingDailyBudget = useCallback((date: string): number => {
+    const dynamicLimit = getDynamicDailyLimit(date); // Use the new dynamic limit calculation
+    if (dynamicLimit === 0 && (!budgetLimit || !budgetLimit.isActive || date < budgetLimit.startDate || date > budgetLimit.endDate)) {
+        return 0; // No budget active for this day
+    }
 
     const dailyExpenses = getDailyExpenses(date);
-    return Math.max(0, budgetLimit.dailyLimit - dailyExpenses);
-  };
+    const remaining = dynamicLimit - dailyExpenses;
+
+    // The remaining budget for the day can be negative if overspent
+    return remaining;
+
+  }, [budgetLimit, getDailyExpenses, getDynamicDailyLimit]);
+
 
   return (
     <FinanceContext.Provider
@@ -456,16 +519,17 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         updateTransaction,
         deleteTransaction,
         setBudgetLimit,
-        resetBudgetLimit, // BARU: Export fungsi reset
+        resetBudgetLimit,
         addSavingsGoal,
         updateSavingsGoal,
         deleteSavingsGoal,
         getDailyExpenses,
-        getRemainingDailyBudget,
+        getRemainingDailyBudget, // Now dynamic
+        getDynamicDailyLimit,   // Export the new function
         getPeriodExpenses,
-        getAdjustedRemainingTotalBudget, 
+        getAdjustedRemainingTotalBudget,
         fetchFinanceData,
-        backupData, 
+        backupData,
         importData,
       }}
     >

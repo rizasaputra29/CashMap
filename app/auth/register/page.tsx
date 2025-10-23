@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Wallet } from 'lucide-react';
+import Image from 'next/image';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -52,9 +52,11 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="p-3 bg-black rounded-lg">
-              <Wallet className="w-8 h-8 text-white" />
+          <Link href="/">
+            <div className="p-4 items-center bg-black rounded-2xl">
+              <Image src="/apple-touch-icon.png" alt="Wallet Icon" width={64} height={64} />
             </div>
+          </Link>
           </div>
           <CardTitle className="text-3xl font-bold">Create Account</CardTitle>
           <CardDescription className="text-base">

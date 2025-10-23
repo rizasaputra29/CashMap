@@ -13,7 +13,7 @@ import { SimpleProgress } from '@/components/SimpleProgress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Target, Check, DollarSign } from 'lucide-react';
-import { formatRupiah, cleanRupiah } from '@/lib/utils'; 
+import { formatRupiah, cleanRupiah } from '@/lib/utils';
 
 export default function SavingsPage() {
   const { savingsGoals, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal } = useFinance();
@@ -25,8 +25,8 @@ export default function SavingsPage() {
 
   const [goalForm, setGoalForm] = useState({
     name: '',
-    targetAmount: '', 
-    currentAmount: '', 
+    targetAmount: '',
+    currentAmount: '',
     deadline: '',
   });
 
@@ -34,7 +34,7 @@ export default function SavingsPage() {
     const cleanedValue = cleanRupiah(e.target.value);
     setGoalForm({ ...goalForm, [key]: cleanedValue });
   };
-  
+
   const handleAddAmountValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const cleanedValue = cleanRupiah(e.target.value);
     setAddAmountValue(cleanedValue);
@@ -165,6 +165,7 @@ export default function SavingsPage() {
       <div className="min-h-screen bg-white">
         <Navigation />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header and Add Goal Dialog remain the same */}
           <div className="mb-8 flex justify-between items-center">
             <div>
               <h1 className="text-4xl font-bold mb-2">Savings Goals</h1>
@@ -172,29 +173,23 @@ export default function SavingsPage() {
             </div>
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
               <DialogTrigger asChild>
-                {/* START PERBAIKAN BUTTON ADD GOAL */}
-                <Button 
+                <Button
                   className="
-                    bg-black text-white hover:bg-gray-800 border-2 border-black 
-                    shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
+                    bg-black text-white hover:bg-gray-800 border-2 border-black
+                    shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
                     transition-all
-                    // Default (mobile): icon size (w-10 px-0)
                     w-10 px-0
-                    // Small/Desktop: full button size (w-auto px-4)
-                    sm:w-auto sm:px-4 
+                    sm:w-auto sm:px-4
                   "
-                  size="default" 
+                  size="default"
                 >
-                  {/* Icon: Jangan berikan margin di mobile, berikan margin di sm ke atas */}
                   <Plus className="w-4 h-4 mr-0 sm:mr-2" />
-                  
-                  {/* Text: Sembunyikan di mobile, tampilkan di sm ke atas */}
                   <span className="hidden sm:inline">Add Goal</span>
                 </Button>
-                {/* END PERBAIKAN BUTTON ADD GOAL */}
               </DialogTrigger>
               <DialogContent className="border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                <DialogHeader>
+                {/* ... Dialog Content remains the same ... */}
+                 <DialogHeader>
                   <DialogTitle className="text-2xl font-bold">Create Savings Goal</DialogTitle>
                   <DialogDescription>
                       Define your target amount and optional deadline for your goal.
@@ -215,7 +210,7 @@ export default function SavingsPage() {
                     <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
                         <Input
-                          type="text" 
+                          type="text"
                           placeholder="10.000.000"
                           value={getFormattedGoalValue('targetAmount')}
                           onChange={(e) => handleGoalAmountChange('targetAmount', e)}
@@ -228,7 +223,7 @@ export default function SavingsPage() {
                     <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
                         <Input
-                          type="text" 
+                          type="text"
                           placeholder="0"
                           value={getFormattedGoalValue('currentAmount')}
                           onChange={(e) => handleGoalAmountChange('currentAmount', e)}
@@ -261,123 +256,143 @@ export default function SavingsPage() {
               <div>
                 <h2 className="text-2xl font-bold mb-4">Active Goals</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {activeGoals.map((goal) => (
-                    <Card
-                      key={goal.id}
-                      className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-                    >
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-xl font-bold">{goal.name}</CardTitle>
-                            {goal.deadline && (
-                              <p className="text-sm text-gray-600 mt-1">
-                                Deadline:{' '}
-                                {new Date(goal.deadline).toLocaleDateString('id-ID', {
-                                  day: 'numeric',
-                                  month: 'long',
-                                  year: 'numeric',
-                                })}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => handleMarkComplete(goal.id)}
-                              className="border-2 border-black hover:bg-green-50"
-                              title="Mark as complete"
-                            >
-                              <Check className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => handleDeleteGoal(goal.id)}
-                              className="border-2 border-black hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <div className="flex justify-between mb-2">
-                            <span className="text-sm font-semibold">Progress</span>
-                            <span className="text-sm font-semibold">
-                              {Math.round((goal.currentAmount / goal.targetAmount) * 100)}%
-                            </span>
-                          </div>
-                          <SimpleProgress
-                            value={(goal.currentAmount / goal.targetAmount) * 100}
-                            className="h-3 border-2 border-black"
-                          />
-                        </div>
+                  {activeGoals.map((goal) => {
+                    const remainingToSave = Math.max(0, goal.targetAmount - goal.currentAmount);
 
-                        <div className="flex justify-between text-sm">
-                          <div>
-                            <p className="text-gray-600">Current</p>
-                            <p className="font-bold text-lg">
-                              {formatRupiah(goal.currentAmount)}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-gray-600">Target</p>
-                            <p className="font-bold text-lg">
-                              {formatRupiah(goal.targetAmount)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="pt-4 border-t-2 border-black">
-                          {addAmountGoalId === goal.id ? (
+                    return (
+                      <Card
+                        key={goal.id}
+                        className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                      >
+                        {/* CardHeader remains the same */}
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-xl font-bold">{goal.name}</CardTitle>
+                              {goal.deadline && (
+                                <p className="text-sm text-gray-600 mt-1">
+                                  Deadline:{' '}
+                                  {new Date(goal.deadline).toLocaleDateString('id-ID', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric',
+                                  })}
+                                </p>
+                              )}
+                            </div>
                             <div className="flex gap-2">
-                              <div className="relative flex-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
-                                <Input
-                                  type="text" 
-                                  placeholder="Amount to add"
-                                  value={getFormattedAddAmountValue()}
-                                  onChange={handleAddAmountValueChange}
-                                  className="border-2 border-black pl-8 text-right"
-                                />
-                              </div>
                               <Button
-                                onClick={() => handleAddAmount(goal.id)}
-                                className="bg-black text-white hover:bg-gray-800 border-2 border-black"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handleMarkComplete(goal.id)}
+                                className="border-2 border-black hover:bg-green-50"
+                                title="Mark as complete"
                               >
-                                Add
+                                <Check className="w-4 h-4" />
                               </Button>
                               <Button
-                                onClick={() => {
-                                  setAddAmountGoalId(null);
-                                  setAddAmountValue('');
-                                }}
                                 variant="outline"
-                                className="border-2 border-black"
+                                size="icon"
+                                onClick={() => handleDeleteGoal(goal.id)}
+                                className="border-2 border-black hover:bg-red-50"
                               >
-                                Cancel
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
-                          ) : (
-                            <Button
-                              onClick={() => setAddAmountGoalId(goal.id)}
-                              className="w-full bg-white text-black hover:bg-gray-100 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all"
-                            >
-                              <DollarSign className="w-4 h-4 mr-2" />
-                              Add Money
-                            </Button>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {/* Progress bar remains the same */}
+                          <div>
+                            <div className="flex justify-between mb-2">
+                              <span className="text-sm font-semibold">Progress</span>
+                              <span className="text-sm font-semibold">
+                                {Math.round((goal.currentAmount / goal.targetAmount) * 100)}%
+                              </span>
+                            </div>
+                            <SimpleProgress
+                              value={(goal.currentAmount / goal.targetAmount) * 100}
+                              className="h-3 border-2 border-black"
+                            />
+                          </div>
+
+                          {/* *** MODIFIED: Layout for amounts *** */}
+                          <div className="text-sm">
+                            <div className="flex justify-between mb-2"> {/* Current & Target */}
+                              <div>
+                                <p className="text-gray-600">Current</p>
+                                <p className="font-bold text-lg">
+                                  {formatRupiah(goal.currentAmount)}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-gray-600">Target</p>
+                                <p className="font-bold text-lg">
+                                  {formatRupiah(goal.targetAmount)}
+                                </p>
+                              </div>
+                            </div>
+                            {/* *** NEW: Remaining amount centered below *** */}
+                            <div className="text-center mt-2 pt-2 border-t border-dashed">
+                              <p className="text-sm text-gray-600">Remaining to Save</p>
+                              <p className="font-bold text-lg text-orange-600">
+                                {formatRupiah(remainingToSave)}
+                              </p>
+                            </div>
+                            {/* *** END: Amount layout modification *** */}
+                          </div>
+
+
+                          {/* Add Money section remains the same */}
+                          <div className="pt-4 border-t-2 border-black">
+                            {addAmountGoalId === goal.id ? (
+                              <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
+                                  <Input
+                                    type="text"
+                                    placeholder="Amount to add"
+                                    value={getFormattedAddAmountValue()}
+                                    onChange={handleAddAmountValueChange}
+                                    className="border-2 border-black pl-8 text-right"
+                                  />
+                                </div>
+                                <Button
+                                  onClick={() => handleAddAmount(goal.id)}
+                                  className="bg-black text-white hover:bg-gray-800 border-2 border-black"
+                                >
+                                  Add
+                                </Button>
+                                <Button
+                                  onClick={() => {
+                                    setAddAmountGoalId(null);
+                                    setAddAmountValue('');
+                                  }}
+                                  variant="outline"
+                                  className="border-2 border-black"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                onClick={() => setAddAmountGoalId(goal.id)}
+                                className="w-full bg-white text-black hover:bg-gray-100 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all"
+                              >
+                                <DollarSign className="w-4 h-4 mr-2" />
+                                Add Money
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
+            {/* Completed Goals section remains the same */}
             {completedGoals.length > 0 && (
               <div>
                 <h2 className="text-2xl font-bold mb-4">Completed Goals</h2>
@@ -387,6 +402,7 @@ export default function SavingsPage() {
                       key={goal.id}
                       className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-green-50"
                     >
+                      {/* ... Completed Goal Card Content ... */}
                       <CardHeader>
                         <div className="flex justify-between items-start">
                           <div>
@@ -427,6 +443,7 @@ export default function SavingsPage() {
               </div>
             )}
 
+            {/* No Goals Yet card remains the same */}
             {savingsGoals.length === 0 && (
               <Card className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 <CardContent className="flex flex-col items-center justify-center py-16">
@@ -435,6 +452,7 @@ export default function SavingsPage() {
                   <p className="text-gray-600 mb-6 text-center">
                     Create your first savings goal to start tracking your progress
                   </p>
+                  {/* Optionally add the Add Goal button here too */}
                 </CardContent>
               </Card>
             )}

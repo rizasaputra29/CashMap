@@ -38,9 +38,7 @@ export default function Home() {
         <div className="flex flex-col items-center justify-center min-h-screen py-12">
           <div className="text-center mb-12">
             <div className="flex justify-center mb-6">
-              <div className="p-4 items-center bg-black rounded-2xl">
-                <Image src="/apple-touch-icon.png" alt="Wallet Icon" width={80} height={80} />
-              </div>
+                <Image className='rounded-xl' src="/apple-touch-icon.png" alt="Wallet Icon" width={80} height={80} />
             </div>
              {/* *** UPDATE: App name *** */}
             <h1 className="text-6xl font-bold mb-4">Cash Map</h1>

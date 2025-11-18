@@ -1,40 +1,47 @@
-// rizasaputra29/financial-tracker/Financial-Tracker-15996308ee6cfd5d3abc50bd8eb71447eefc8019/app/layout.tsx
 import './globals.css';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { FinanceProvider } from '@/contexts/FinanceContext';
-import { Toaster } from '@/components/ui/toaster';
+// 1. Import tipe Viewport
+import type { Metadata, Viewport } from 'next';
+import { Onest } from 'next/font/google';
+import { AuthProvider } from '../contexts/AuthContext';
+import { FinanceProvider } from '../contexts/FinanceContext';
+import { Toaster } from '../components/ui/toaster';
+import LenisProvider from '../components/LenisProvider';
 
-const inter = Inter({ subsets: ['latin'] });
+const onest = Onest({ subsets: ['latin'] });
 
+// 2. Pisahkan konfigurasi Viewport (themeColor, width, scale, dll)
+export const viewport: Viewport = {
+  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
+
+// 3. Konfigurasi Metadata (Judul, Deskripsi, Ikon, Manifest)
 export const metadata: Metadata = {
-  // *** UPDATE: Change title ***
   title: 'Cash Map',
   description: 'Track your income, expenses, and savings goals',
   manifest: '/site.webmanifest',
-  themeColor: '#000000', // Or '#ffffff' depending on your manifest
+  // themeColor DIHAPUS dari sini karena sudah pindah ke viewport
   icons: {
-    // Keep existing references as they match your public folder files
-    icon: '/android-chrome-512x512.png', // Main icon
-    apple: '/apple-touch-icon.png', // Apple touch icon
+    icon: '/android-chrome-512x512.png',
+    apple: '/apple-touch-icon.png',
     other: [
       {
         rel: 'icon',
         type: 'image/png',
         sizes: '32x32',
-        url: '/favicon-32x32.png', //
+        url: '/favicon-32x32.png',
       },
       {
         rel: 'icon',
         type: 'image/png',
         sizes: '16x16',
-        url: '/favicon-16x16.png', //
+        url: '/favicon-16x16.png',
       },
-       // You might also want to explicitly add favicon.ico if needed by older browsers
        {
          rel: 'shortcut icon',
-         url: '/favicon.ico', //
+         url: '/favicon.ico',
        },
     ],
   },
@@ -46,14 +53,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <AuthProvider>
-          <FinanceProvider>
-            {children}
-            <Toaster /> {/* */}
-          </FinanceProvider>
-        </AuthProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={onest.className} suppressHydrationWarning>
+        <LenisProvider>
+          <AuthProvider>
+            <FinanceProvider>
+              {children}
+              <Toaster />
+            </FinanceProvider>
+          </AuthProvider>
+        </LenisProvider>
       </body>
     </html>
   );

@@ -1,10 +1,7 @@
-// rizasaputra29/financial-tracker/Financial-Tracker-15996308ee6cfd5d3abc50bd8eb71447eefc8019/app/dashboard/page.tsx
 'use client';
 
 import { useState, useMemo } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Navigation } from '@/components/Navigation';
-// Import the new function
 import { useFinance } from '@/contexts/FinanceContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,29 +12,54 @@ import { formatRupiah, cleanRupiah } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
-
-// Keep helper function to calculate days difference for the form
+// ... (Helper calculateDaysDifference tetap sama) ...
 const calculateDaysDifference = (start: string, end: string): number => {
     const startDate = new Date(start);
     const endDate = new Date(end);
-
-    // Set time to noon to avoid timezone issues affecting day difference
     startDate.setHours(12, 0, 0, 0);
     endDate.setHours(12, 0, 0, 0);
-
     const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-    // Add 1 to include both start and end dates
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return Math.max(1, diffDays); // Ensure at least 1 day
+    return Math.max(1, diffDays);
 }
 
+const incomeCategories = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'];
+const expenseCategories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other'];
+
+const initialTransactionForm = {
+  id: '',
+  type: 'expense' as 'income' | 'expense',
+  amount: '',
+  category: '',
+  description: '',
+  date: new Date().toISOString().split('T')[0],
+};
+
 export default function DashboardPage() {
-  // Destructure the new function
-  const { transactions, budgetLimit, savingsGoals, getDailyExpenses, getRemainingDailyBudget, setBudgetLimit, getAdjustedRemainingTotalBudget, resetBudgetLimit, getDynamicDailyLimit } =
-    useFinance();
+  const { 
+    transactions, 
+    budgetLimit, 
+    savingsGoals, 
+    getDailyExpenses, 
+    getRemainingDailyBudget, 
+    setBudgetLimit, 
+    getAdjustedRemainingTotalBudget, 
+    resetBudgetLimit, 
+    getDynamicDailyLimit,
+    addTransaction 
+  } = useFinance();
   const { toast } = useToast();
 
   const today = new Date().toISOString().split('T')[0];
@@ -49,147 +71,222 @@ export default function DashboardPage() {
     endDate: budgetLimit?.endDate || '',
     isActive: budgetLimit?.isActive ?? true,
   });
+  
+  const [isTxnFormOpen, setIsTxnFormOpen] = useState(false);
+  const [transactionForm, setTransactionForm] = useState<typeof initialTransactionForm>({
+    ...initialTransactionForm,
+  });
 
-  // ... (Keep existing handlers: handleTotalBudgetChange, handleSetBudget, handleResetBudget) ...
-    const handleTotalBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const cleanedValue = cleanRupiah(e.target.value);
+    setTransactionForm({ ...transactionForm, amount: cleanedValue });
+  };
+  
+  const handleTxnDialogChange = (open: boolean) => {
+    setIsTxnFormOpen(open);
+    if (!open) {
+      setTransactionForm({ ...initialTransactionForm });
+    }
+  };
+
+  const handleSaveTransaction = async () => {
+    if (!transactionForm.amount || !transactionForm.category) {
+      toast({ title: 'Error', description: 'Please fill all required fields', variant: 'destructive' });
+      return;
+    }
+    const transactionData = {
+        type: transactionForm.type,
+        amount: parseFloat(transactionForm.amount), 
+        category: transactionForm.category,
+        description: transactionForm.description,
+        date: transactionForm.date,
+    }
+    try {
+        await addTransaction(transactionData);
+        toast({ title: 'Success', description: 'Transaction added successfully' });
+        setTransactionForm({ ...initialTransactionForm });
+        setIsTxnFormOpen(false);
+    } catch(e) {
+        toast({ title: 'Error', description: 'Failed to save transaction.', variant: 'destructive' });
+    }
+  };
+
+  const handleTotalBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const cleanedValue = cleanRupiah(e.target.value);
     setBudgetForm({ ...budgetForm, totalBudget: cleanedValue });
   };
-
   const handleSetBudget = async () => {
     if (!budgetForm.totalBudget || !budgetForm.endDate || !budgetForm.startDate) {
-      toast({
-        title: 'Error',
-        description: 'Please fill Total Budget, Start Date, and End Date',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Please fill Total Budget, Start Date, and End Date', variant: 'destructive' });
       return;
     }
-
-    // Ensure start date is not after end date
     if (new Date(budgetForm.startDate) > new Date(budgetForm.endDate)) {
-        toast({
-            title: 'Error',
-            description: 'Start date cannot be after end date.',
-            variant: 'destructive',
-        });
+        toast({ title: 'Error', description: 'Start date cannot be after end date.', variant: 'destructive' });
         return;
     }
-
-
     const daysCount = calculateDaysDifference(budgetForm.startDate, budgetForm.endDate);
     const totalBudgetAmount = parseFloat(budgetForm.totalBudget);
-
-    // Calculate the INITIAL daily limit based on the total budget and duration
     const initialDailyLimit = daysCount > 0 ? totalBudgetAmount / daysCount : totalBudgetAmount;
-
     try {
       await setBudgetLimit({
         totalBudget: totalBudgetAmount,
-        // Save the initially calculated daily limit
         dailyLimit: initialDailyLimit,
         startDate: budgetForm.startDate,
         endDate: budgetForm.endDate,
         isActive: budgetForm.isActive,
       });
-
-      toast({
-        title: 'Success',
-        description: 'Budget limit set successfully',
-      });
-
+      toast({ title: 'Success', description: 'Budget limit set successfully' });
       setIsBudgetOpen(false);
     } catch (e) {
-      toast({
-          title: 'Error',
-          description: 'Failed to save budget limit. Please check server connection.',
-          variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to save budget limit.', variant: 'destructive' });
     }
   };
-
-  // FUNGSI BARU: Handler untuk tombol Reset Budget
   const handleResetBudget = async () => {
     if (!budgetLimit) return;
-
     try {
         await resetBudgetLimit();
-        toast({
-            title: 'Budget Reset',
-            description: 'Budget limit has been reset.',
-        });
+        toast({ title: 'Budget Reset', description: 'Budget limit has been reset.' });
     } catch(e) {
-        toast({
-            title: 'Error',
-            description: 'Failed to reset budget. Please check server connection.',
-            variant: 'destructive',
-        });
+        toast({ title: 'Error', description: 'Failed to reset budget.', variant: 'destructive' });
     }
   };
-
-
+  
   const daysCountEstimate = budgetForm.startDate && budgetForm.endDate && new Date(budgetForm.startDate) <= new Date(budgetForm.endDate)
     ? calculateDaysDifference(budgetForm.startDate, budgetForm.endDate)
     : 0;
-
   const estimatedTotalBudget = parseFloat(budgetForm.totalBudget || '0');
-  // Form estimate still uses the simple calculation
   const estimatedDailyLimit = daysCountEstimate > 0 ? estimatedTotalBudget / daysCountEstimate : 0;
 
-  const totalIncome = useMemo(
-    () =>
-      transactions
-        .filter((t) => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0),
-    [transactions]
-  );
-
-  const totalExpenses = useMemo(
-    () =>
-      transactions
-        .filter((t) => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0),
-    [transactions]
-  );
-
+  const totalIncome = useMemo(() => transactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0), [transactions]);
+  const totalExpenses = useMemo(() => transactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0), [transactions]);
   const balance = totalIncome - totalExpenses;
   const todayExpenses = getDailyExpenses(today);
-
-  // Use the new dynamic calculation from context
+  
   const remainingDailyBudget = getRemainingDailyBudget(today);
-  const dynamicDailyLimitForToday = getDynamicDailyLimit(today); // Get today's dynamic limit
-
+  const dynamicDailyLimitForToday = getDynamicDailyLimit(today);
   const adjustedRemainingTotalBudget = getAdjustedRemainingTotalBudget();
-
-  const isBudgetActiveToday = budgetLimit &&
-                              budgetLimit.isActive &&
-                              today >= budgetLimit.startDate &&
-                              today <= budgetLimit.endDate;
-
-  // Compare today's expenses with the DYNAMIC limit for today
-  const dailyBudgetExceeded = isBudgetActiveToday && todayExpenses > dynamicDailyLimitForToday && dynamicDailyLimitForToday > 0; // Check > 0 to avoid false positives on last day with 0 budget
-
+  const isBudgetActiveToday = budgetLimit && budgetLimit.isActive && today >= budgetLimit.startDate && today <= budgetLimit.endDate;
+  const dailyBudgetExceeded = isBudgetActiveToday && todayExpenses > dynamicDailyLimitForToday && dynamicDailyLimitForToday > 0;
   const activeSavingsGoals = savingsGoals.filter((g) => !g.isCompleted);
-
-  // Calculate progress percentage based on dynamic limit
-  const dailyProgressPercentage = dynamicDailyLimitForToday > 0
-    ? (todayExpenses / dynamicDailyLimitForToday) * 100
-    : (todayExpenses > 0 ? 100 : 0); // If limit is 0, show 100% if any expense exists
+  const dailyProgressPercentage = dynamicDailyLimitForToday > 0 ? (todayExpenses / dynamicDailyLimitForToday) * 100 : (todayExpenses > 0 ? 100 : 0);
 
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-white">
-        <Navigation />
+      {/* Tambahkan div padding untuk bottom nav */}
+      <div className="pb-16 lg:pb-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* ... (Keep Header and Summary Cards) ... */}
-            <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
-            <p className="text-gray-600">Welcome back! Here's your financial overview.</p>
+          
+          <div className="mb-8 flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
+              <p className="text-gray-600">Welcome back! Here's your financial overview.</p>
+            </div>
+            
+            <Dialog open={isTxnFormOpen} onOpenChange={handleTxnDialogChange}>
+              <DialogTrigger asChild>
+                <Button 
+                  className="bg-black text-white hover:bg-gray-800 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all w-10 px-0 sm:w-auto sm:px-4"
+                  size="default" 
+                >
+                  <Plus className="w-4 h-4 mr-0 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Transaction</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold">
+                      Add Transaction
+                  </DialogTitle>
+                  <DialogDescription>
+                      Record a new income or expense.
+                  </DialogDescription>
+                </DialogHeader>
+                <Tabs
+                  value={transactionForm.type}
+                  onValueChange={(value) =>
+                    setTransactionForm({ ...transactionForm, type: value as 'income' | 'expense' })
+                  }
+                >
+                  <TabsList className="grid w-full grid-cols-2 border-2 border-black">
+                    <TabsTrigger value="expense" className="font-semibold">
+                      Expense
+                    </TabsTrigger>
+                    <TabsTrigger value="income" className="font-semibold">
+                      Income
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value={transactionForm.type} className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label>Amount</Label>
+                      <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
+                          <Input
+                            type="text" 
+                            placeholder={transactionForm.type === 'income' ? '5.000.000' : '50.000'}
+                            value={formatRupiah(parseFloat(transactionForm.amount || '0')).replace('Rp', '').trim()}
+                            onChange={handleAmountChange}
+                            className="border-2 border-black pl-8 text-right" 
+                          />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Category</Label>
+                      <Select
+                        value={transactionForm.category}
+                        onValueChange={(value) =>
+                          setTransactionForm({ ...transactionForm, category: value })
+                        }
+                      >
+                        <SelectTrigger className="border-2 border-black">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent className="border-2 border-black">
+                          {(transactionForm.type === 'expense' ? expenseCategories : incomeCategories).map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Date</Label>
+                      <Input
+                        type="date"
+                        value={transactionForm.date}
+                        onChange={(e) =>
+                          setTransactionForm({ ...transactionForm, date: e.target.value })
+                        }
+                        className="border-2 border-black"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description (Optional)</Label>
+                      <Textarea
+                        placeholder="Add notes..."
+                        value={transactionForm.description}
+                        onChange={(e) =>
+                          setTransactionForm({ ...transactionForm, description: e.target.value })
+                        }
+                        className="border-2 border-black"
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+                <Button
+                  onClick={handleSaveTransaction}
+                  className="w-full bg-black text-white hover:bg-gray-800 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                >
+                  Add Transaction
+                </Button>
+              </DialogContent>
+            </Dialog>
+            
           </div>
 
+          {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {/* ... Summary Cards ... */}
             <Card className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-semibold text-gray-600">
@@ -203,7 +300,6 @@ export default function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
-
             <Card className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-semibold text-gray-600">
@@ -217,7 +313,6 @@ export default function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
-
             <Card className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-semibold text-gray-600">
@@ -231,7 +326,6 @@ export default function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
-
             <Card className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-semibold text-gray-600">
@@ -245,9 +339,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-
-
-          {/* WARNING uses dynamicDailyLimitForToday */}
+          
           {dailyBudgetExceeded && (
             <Alert
               variant="destructive"
@@ -257,19 +349,15 @@ export default function DashboardPage() {
               <AlertTitle>Warning: Daily Budget Exceeded!</AlertTitle>
               <AlertDescription>
                   Your spending today ({formatRupiah(todayExpenses)}) has exceeded the adjusted daily limit ({formatRupiah(dynamicDailyLimitForToday)}).
-                  Your remaining total budget is adjusted accordingly.
               </AlertDescription>
             </Alert>
           )}
 
-          {/* BUDGET CARD */}
           {isBudgetActiveToday && budgetLimit ? (
             <Card className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-8">
-              {/* CardHeader remains the same (with Reset and Set Budget buttons) */}
               <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
                 <CardTitle className="text-xl font-bold mb-3 sm:mb-0">Daily Budget Tracker</CardTitle>
                 <div className="flex flex-col gap-2 sm:flex-row w-full sm:w-auto">
-                    {/* Reset Button */}
                     <Button
                         variant="destructive"
                         size="sm"
@@ -279,7 +367,6 @@ export default function DashboardPage() {
                         <XCircle className="w-4 h-4 mr-2" />
                         Reset Budget
                     </Button>
-                    {/* Set/Edit Budget Dialog Trigger */}
                     <Dialog open={isBudgetOpen} onOpenChange={setIsBudgetOpen}>
                       <DialogTrigger asChild>
                         <Button
@@ -291,12 +378,11 @@ export default function DashboardPage() {
                           Set Budget
                         </Button>
                       </DialogTrigger>
-                      {/* Set Budget Dialog Content (remains the same) */}
                       <DialogContent className="border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                         <DialogHeader>
                           <DialogTitle className="text-2xl font-bold">Set Budget Limit</DialogTitle>
                           <DialogDescription>
-                              Set your total budget and the duration. Your daily limit will be calculated initially.
+                              Set your total budget and the duration.
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 mt-4">
@@ -367,7 +453,6 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    {/* MODIFIED: Display dynamic daily limit */}
                     <p className="text-sm text-gray-600">Today's Limit (Adjusted)</p>
                     <p className="text-2xl font-bold">
                       {formatRupiah(dynamicDailyLimitForToday)}
@@ -377,19 +462,15 @@ export default function DashboardPage() {
                 <div>
                   <div className="flex justify-between mb-2">
                     <span className="text-sm font-semibold">Remaining Today</span>
-                    {/* MODIFIED: Display dynamically calculated remaining budget, show negative if overspent */}
                     <span className={`text-sm font-semibold ${remainingDailyBudget < 0 ? 'text-red-600' : ''}`}>
                       {formatRupiah(remainingDailyBudget)}
                     </span>
                   </div>
-                  {/* MODIFIED: Use dynamic percentage */}
                   <SimpleProgress
                     value={dailyProgressPercentage}
                     className="h-3 border-2 border-black"
                   />
                 </div>
-
-                {/* Adjusted Remaining Total display remains the same */}
                 <div className="text-sm text-gray-600 space-y-1 pt-4 border-t-2 border-dashed border-gray-300">
                     <p>Original Total Budget: <span className="font-semibold">{formatRupiah(budgetLimit.totalBudget)}</span></p>
                     <p className="text-lg font-bold">
@@ -408,14 +489,13 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           ) : (
-            // "Budget Not Active" Card remains the same
             <Card className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-8">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Target className="w-12 h-12 mb-4 text-gray-400" />
                 <h3 className="text-xl font-bold mb-2">Budget Not Active</h3>
                 {budgetLimit && (
                     <p className="text-gray-600 mb-4 text-center">
-                        The saved budget ({formatRupiah(budgetLimit.totalBudget)}) is currently **inactive** as it's outside the set period:
+                        The saved budget ({formatRupiah(budgetLimit.totalBudget)}) is currently inactive.
                         <br/>
                         ({new Date(budgetLimit.startDate).toLocaleDateString('id-ID')} - {new Date(budgetLimit.endDate).toLocaleDateString('id-ID')}).
                     </p>
@@ -432,12 +512,11 @@ export default function DashboardPage() {
                       Set Budget Limit
                     </Button>
                   </DialogTrigger>
-                    {/* Set Budget Dialog Content (remains the same) */}
                   <DialogContent className="border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                     <DialogHeader>
                       <DialogTitle className="text-2xl font-bold">Set Budget Limit</DialogTitle>
                       <DialogDescription>
-                          Set your total budget and the duration. Your daily limit will be calculated initially.
+                          Set your total budget and the duration.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 mt-4">
@@ -500,9 +579,7 @@ export default function DashboardPage() {
             </Card>
           )}
 
-          {/* Recent Transactions and Savings Goals Cards remain the same */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Kartu Recent Transactions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <CardHeader>
                 <CardTitle className="text-xl font-bold">Recent Transactions</CardTitle>
@@ -551,7 +628,6 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Kartu Savings Goals */}
             <Card className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <CardHeader>
                 <CardTitle className="text-xl font-bold">Savings Goals</CardTitle>

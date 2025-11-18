@@ -98,12 +98,10 @@ export default function LoginPage() {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <Link href="/">
-            <div className="p-4 items-center bg-black rounded-2xl">
-                <Image src="/apple-touch-icon.png" alt="Wallet Icon" width={64} height={64} />
-              </div>
+                <Image className='rounded-xl' src="/apple-touch-icon.png" alt="Wallet Icon" width={64} height={64} />
             </Link>
           </div>
-          <CardTitle className="text-3xl font-bold">Financial Tracker</CardTitle>
+          <CardTitle className="text-3xl font-bold">CashMap</CardTitle>
           <CardDescription className="text-base">
             Login to manage your finances
           </CardDescription>

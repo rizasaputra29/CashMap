@@ -1,22 +1,20 @@
-// rizasaputra29/financial-tracker/Financial-Tracker-6ef0fa1fb6903e1bd873f45840a83116c489026f/app/auth/register/page.tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '../../../../contexts/AuthContext';
+import { Button } from '../../../../components/ui/button';
+import { Input } from '../../../../components/ui/input';
+import { Label } from '../../../../components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../components/ui/card';
+import { useToast } from '../../../../hooks/use-toast';
 import Image from 'next/image';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  // BARU: State untuk jawaban keamanan
   const [securityAnswer, setSecurityAnswer] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
@@ -27,7 +25,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Kirim securityAnswer ke fungsi register
     const success = await register(email, password, fullName, securityAnswer);
 
     if (success) {
@@ -100,9 +97,11 @@ export default function RegisterPage() {
                 className="border-2 border-black"
               />
             </div>
-            {/* BARU: Input untuk Jawaban Keamanan */}
             <div className="space-y-2">
-              <Label htmlFor="securityAnswer">Security Question: Mother's Maiden Name</Label>
+              <Label htmlFor="securityAnswer">Security Question: 
+                  {/* FIX: Escape single quote */}
+                  Mother&apos;s Maiden Name
+              </Label>
               <Input
                 id="securityAnswer"
                 type="text"

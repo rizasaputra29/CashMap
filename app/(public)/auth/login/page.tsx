@@ -1,16 +1,15 @@
-// rizasaputra29/financial-tracker/Financial-Tracker-6ef0fa1fb6903e1bd873f45840a83116c489026f/app/auth/login/page.tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogClose } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '../../../../contexts/AuthContext';
+import { Button } from '../../../../components/ui/button';
+import { Input } from '../../../../components/ui/input';
+import { Label } from '../../../../components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogClose } from '../../../../components/ui/dialog';
+import { useToast } from '../../../../hooks/use-toast';
 import { Wallet, Mail, Send, Key } from 'lucide-react';
 import Image from 'next/image';
 
@@ -19,11 +18,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  // State untuk Forgot Password
   const [isForgotOpen, setIsForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSecurityAnswer, setForgotSecurityAnswer] = useState('');
-  // BARU: State untuk password baru
   const [newPassword, setNewPassword] = useState(''); 
   const [isSendingReset, setIsSendingReset] = useState(false);
 
@@ -54,7 +51,6 @@ export default function LoginPage() {
     setIsLoading(false);
   };
   
-  // HANDLER BARU: Submit Forgot Password dengan Password Baru
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -69,7 +65,6 @@ export default function LoginPage() {
 
     setIsSendingReset(true);
 
-    // Kirim email, jawaban keamanan, dan password baru
     const success = await forgotPassword(forgotEmail, forgotSecurityAnswer, newPassword);
 
     if (success) {
@@ -89,7 +84,7 @@ export default function LoginPage() {
     setIsForgotOpen(false);
     setForgotEmail('');
     setForgotSecurityAnswer(''); 
-    setNewPassword(''); // Bersihkan field
+    setNewPassword(''); 
   };
 
   return (
@@ -132,7 +127,6 @@ export default function LoginPage() {
                 className="border-2 border-black"
               />
             </div>
-            {/* Forgot Password Link & Dialog */}
             <div className="flex justify-end text-sm">
                 <Dialog open={isForgotOpen} onOpenChange={setIsForgotOpen}>
                     <DialogTrigger asChild>
@@ -164,7 +158,8 @@ export default function LoginPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="forgotSecurityAnswer" className="flex items-center gap-2">
-                                    <Key className="w-4 h-4" /> Mother's Maiden Name
+                                    {/* FIX: Escape single quote */}
+                                    <Key className="w-4 h-4" /> Mother&apos;s Maiden Name
                                 </Label>
                                 <Input
                                     id="forgotSecurityAnswer"
@@ -176,7 +171,6 @@ export default function LoginPage() {
                                     className="border-2 border-black"
                                 />
                             </div>
-                            {/* BARU: Input untuk Password Baru */}
                             <div className="space-y-2">
                                 <Label htmlFor="newPassword">New Password (min 6 characters)</Label>
                                 <Input
@@ -221,7 +215,8 @@ export default function LoginPage() {
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            Don't have an account?{' '}
+            {/* FIX: Escape single quote */}
+            Don&apos;t have an account?{' '}
             <Link href="/auth/register" className="underline font-semibold hover:text-gray-600">
               Register
             </Link>

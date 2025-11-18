@@ -291,7 +291,7 @@ export default function TransactionsPage() {
                       <p className="text-sm text-gray-500">Try adjusting your date filters or clearing them.</p>
                   ) : (
                       <p className="text-sm text-gray-500">
-                        Click "Add Transaction" to get started
+                        Click &quot;Add Transaction&quot; to get started
                       </p>
                   )}
                 </div>

@@ -180,7 +180,7 @@ export default function DashboardPage() {
           <div className="mb-8 flex justify-between items-center">
             <div>
               <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
-              <p className="text-gray-600">Welcome back! Here's your financial overview.</p>
+              <p className="text-gray-600">Welcome back! Here&apos;s your financial overview.</p>
             </div>
             
             <Dialog open={isTxnFormOpen} onOpenChange={handleTxnDialogChange}>
@@ -447,13 +447,13 @@ export default function DashboardPage() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm text-gray-600">Today's Spending</p>
+                    <p className="text-sm text-gray-600">Today&apos;s Spending</p>
                     <p className="text-2xl font-bold">
                       {formatRupiah(todayExpenses)}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">Today's Limit (Adjusted)</p>
+                    <p className="text-sm text-gray-600">Today&apos;s Limit (Adjusted)</p>
                     <p className="text-2xl font-bold">
                       {formatRupiah(dynamicDailyLimitForToday)}
                     </p>

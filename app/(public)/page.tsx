@@ -14,7 +14,6 @@ import {
   Target, 
   TrendingUp,
   Github,
-  Twitter,
   Linkedin,
   Instagram
 } from 'lucide-react';
@@ -38,7 +37,7 @@ export default function Home() {
     );
   }
 
-  // Animation variants typed explicitly to fix TS errors
+  // Animation variants
   const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 40 },
     visible: { 
@@ -67,13 +66,13 @@ export default function Home() {
     <main className="min-h-screen bg-white text-black overflow-x-hidden font-sans selection:bg-[#D2F65E]">
       
       {/* --- HERO SECTION --- */}
-      <section className="pt-6 pb-12 px-4 sm:px-6 lg:px-8">
+      <section className="pt-12 pb-12 px-4 sm:px-6 lg:px-8">
         <motion.div 
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInUp}
-          className="max-w-7xl mx-auto bg-[#D2F65E] rounded-[2.5rem] p-8 md:p-16 relative overflow-hidden shadow-xl"
+          className="max-w-7xl mx-auto bg-[#D2F65E] rounded-[2.5rem] p-8 md:p-16 relative overflow-hidden shadow-xl min-h-[600px] flex flex-col justify-center"
         >
           {/* Decorative Abstract Lines */}
           <div className="absolute top-0 right-0 w-full h-full pointer-events-none opacity-20">
@@ -85,7 +84,7 @@ export default function Home() {
 
           <div className="grid lg:grid-cols-2 gap-12 items-center relative z-10">
             {/* Left: Text */}
-            <div className="space-y-8">
+            <div className="space-y-8 relative z-20">
               {/* LOGO HEADER */}
               <div className="flex items-center gap-3">
                 <div className="relative w-10 h-10 bg-white rounded-xl flex items-center justify-center border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
@@ -125,70 +124,44 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right: Abstract App Mockup */}
-            <div className="relative hidden lg:block h-[500px]">
-              {/* Phone 1: Dashboard */}
+            {/* Right: App Mockup Images (Using JPG) */}
+            {/* Hidden on mobile, visible on lg screens */}
+            <div className="relative hidden lg:block h-[600px] w-full">
+              
+              {/* Image 2: Landing Page (Back) */}
               <motion.div 
-                initial={{ y: 100, opacity: 0, rotate: -10 }}
-                animate={{ y: 0, opacity: 1, rotate: -6 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="absolute left-10 top-10 w-72 h-[480px] bg-white rounded-[2.5rem] border-[6px] border-black shadow-2xl p-5 flex flex-col gap-5 z-10"
+                initial={{ y: -50, opacity: 0, rotate: 6, scale: 0.9 }}
+                animate={{ y: 0, opacity: 1, rotate: 12, scale: 0.9 }}
+                transition={{ duration: 0.8, delay: 0.4, type: "spring" }}
+                className="absolute top-4 right-4 w-[300px] z-10"
               >
-                <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-                  <div className="w-10 h-10 bg-gray-100 rounded-full" />
-                  <div className="w-24 h-5 bg-gray-100 rounded-full" />
-                </div>
-                <div className="space-y-2">
-                   <p className="text-sm text-gray-400 font-medium">Total Balance</p>
-                   <h3 className="text-3xl font-bold">Rp 12.500k</h3>
-                </div>
-                <div className="h-28 bg-[#D2F65E] rounded-2xl flex items-center justify-center relative overflow-hidden border-2 border-black/5">
-                   <TrendingUp className="w-16 h-16 opacity-20 absolute -bottom-3 -right-3" />
-                   <span className="font-bold text-lg">+15% Income</span>
-                </div>
-                <div className="space-y-3 mt-1">
-                  {[1,2,3].map(i => (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gray-50 rounded-xl" />
-                      <div className="flex-1 space-y-2">
-                        <div className="w-full h-3 bg-gray-100 rounded-full" />
-                        <div className="w-2/3 h-3 bg-gray-100 rounded-full" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                 <Image
+                   src="/landing-mockup.png" // Ubah ke .jpg
+                   alt="CashMap Mobile Landing"
+                   width={600}
+                   height={850}
+                   className="w-full h-auto object-cover opacity-90 hover:opacity-100 transition-opacity"
+                   priority
+                 />
               </motion.div>
 
-              {/* Phone 2: Dark Mode / Savings */}
+              {/* Image 1: Dashboard (Front) */}
               <motion.div 
-                initial={{ y: 100, opacity: 0, rotate: 10 }}
-                animate={{ y: 60, opacity: 1, rotate: 8 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-                className="absolute right-4 top-4 w-64 h-[420px] bg-black text-white rounded-[2.5rem] border-[6px] border-black shadow-2xl p-5 flex flex-col gap-5 z-0"
+                initial={{ y: 100, opacity: 0, rotate: -5 }}
+                animate={{ y: 40, opacity: 1, rotate: -6 }}
+                transition={{ duration: 0.8, delay: 0.2, type: "spring" }}
+                className="absolute top-10 left-10 w-[320px] z-20"
               >
-                 <div className="flex justify-between items-center pb-1">
-                  <h4 className="font-bold text-lg">Savings</h4>
-                  <Target className="text-[#D2F65E]" />
-                </div>
-                <div className="p-4 bg-white/10 rounded-2xl border border-white/10">
-                  <div className="flex justify-between mb-3">
-                    <span className="text-sm font-medium">Vacation</span>
-                    <span className="text-[#D2F65E] text-sm font-bold">80%</span>
-                  </div>
-                  <div className="w-full bg-gray-800 h-3 rounded-full overflow-hidden">
-                    <div className="bg-[#D2F65E] w-[80%] h-full" />
-                  </div>
-                </div>
-                <div className="p-4 bg-white/10 rounded-2xl border border-white/10">
-                  <div className="flex justify-between mb-3">
-                    <span className="text-sm font-medium">New Laptop</span>
-                    <span className="text-[#D2F65E] text-sm font-bold">45%</span>
-                  </div>
-                  <div className="w-full bg-gray-800 h-3 rounded-full overflow-hidden">
-                    <div className="bg-[#D2F65E] w-[45%] h-full" />
-                  </div>
-                </div>
+                 <Image
+                   src="/dashboard-mockup.png" // Ubah ke .jpg
+                   alt="CashMap Dashboard"
+                   width={620}
+                   height={790}
+                   className="w-full h-auto object-cover"
+                   priority
+                 />
               </motion.div>
+
             </div>
           </div>
         </motion.div>

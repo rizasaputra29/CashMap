@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { useFinance, Transaction } from '@/contexts/FinanceContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useFinance } from '@/contexts/FinanceContext';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription
@@ -16,8 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-// Menambahkan ikon X (untuk clear filter) dan Filter
-import { Plus, Trash2, TrendingUp, TrendingDown, Edit, X, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Trash2, TrendingUp, TrendingDown, Edit, X, Calendar as CalendarIcon, Filter, Search } from 'lucide-react';
 import { formatRupiah, cleanRupiah } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -34,7 +33,6 @@ export default function TransactionsPage() {
     date: new Date().toISOString().split('T')[0],
   });
 
-  // --- BARU: State untuk Filter Tanggal ---
   const [dateFilter, setDateFilter] = useState({
     startDate: '',
     endDate: ''
@@ -80,71 +78,45 @@ export default function TransactionsPage() {
     
     try {
       await deleteTransaction(id);
-      toast({
-        title: 'Success',
-        description: 'Transaction deleted',
-      });
+      toast({ title: 'Success', description: 'Transaction deleted' });
     } catch(e) {
-      toast({
-          title: 'Error',
-          description: 'Failed to delete transaction. Please check server connection.',
-          variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to delete transaction.', variant: 'destructive' });
     }
   };
 
-  // --- MODIFIKASI: Filter dan Sort Transaksi ---
   const filteredTransactions = transactions
     .filter(t => {
-      // Filter berdasarkan tanggal mulai
       if (dateFilter.startDate && t.date < dateFilter.startDate) return false;
-      // Filter berdasarkan tanggal akhir
       if (dateFilter.endDate && t.date > dateFilter.endDate) return false;
       return true;
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // --- BARU: Fungsi Clear Filter ---
   const clearFilters = () => {
     setDateFilter({ startDate: '', endDate: '' });
   };
   
   return (
     <ProtectedRoute>
-      {/* Tambahkan div padding untuk bottom nav */}
-      <div className="pb-16 lg:pb-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-gray-50/50 pb-24 font-sans selection:bg-[#D2F65E]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           
-          <div className="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
             <div>
-              <h1 className="text-4xl font-bold mb-2">Transactions</h1>
-              <p className="text-gray-600">Manage your income and expenses</p>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight">Transactions</h1>
+              <p className="text-sm text-gray-500 font-medium mt-1">Manage your income and expenses</p>
             </div>
-            <div className="flex gap-3">
-              <Dialog open={isAddTxnOpen} onOpenChange={setIsAddTxnOpen}>
+            <Dialog open={isAddTxnOpen} onOpenChange={setIsAddTxnOpen}>
                 <DialogTrigger asChild>
-                  <Button 
-                    className="
-                      bg-black text-white hover:bg-gray-800 border-2 border-black 
-                      shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
-                      transition-all w-full sm:w-auto
-                    "
-                    size="default" 
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    <span className="hidden sm:inline">Add Transaction</span>
-                    <span className="sm:hidden">Add</span>
+                  <Button className="h-12 px-8 rounded-full bg-black text-white font-bold hover:scale-105 transition-transform shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
+                    <Plus className="w-5 h-5 mr-2" /> Add New
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                  {/* ... (Isi Dialog Form sama seperti sebelumnya) ... */}
+                <DialogContent className="border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-3xl sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold">
-                        Add Transaction
-                    </DialogTitle>
-                    <DialogDescription>
-                        Record a new income or expense.
-                    </DialogDescription>
+                    <DialogTitle className="text-2xl font-bold">Add Transaction</DialogTitle>
+                    <DialogDescription>Record a new income or expense.</DialogDescription>
                   </DialogHeader>
                   <Tabs
                     value={transactionForm.type}
@@ -152,225 +124,163 @@ export default function TransactionsPage() {
                       setTransactionForm({ ...transactionForm, type: value as 'income' | 'expense' })
                     }
                   >
-                    <TabsList className="grid w-full grid-cols-2 border-2 border-black">
-                      <TabsTrigger value="expense" className="font-semibold">
-                        Expense
-                      </TabsTrigger>
-                      <TabsTrigger value="income" className="font-semibold">
-                        Income
-                      </TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 border-2 border-black rounded-xl p-1 h-auto bg-white">
+                      <TabsTrigger value="expense" className="rounded-lg data-[state=active]:bg-black data-[state=active]:text-white font-bold py-2">Expense</TabsTrigger>
+                      <TabsTrigger value="income" className="rounded-lg data-[state=active]:bg-[#D2F65E] data-[state=active]:text-black font-bold py-2">Income</TabsTrigger>
                     </TabsList>
-                    <TabsContent value={transactionForm.type} className="space-y-4 mt-4">
+                    <TabsContent value={transactionForm.type} className="space-y-4 mt-6">
                       <div className="space-y-2">
-                        <Label>Amount</Label>
+                        <Label className="font-bold">Amount</Label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">Rp</span>
                             <Input
                               type="text" 
-                              placeholder={transactionForm.type === 'income' ? '5.000.000' : '50.000'}
+                              placeholder="0"
                               value={formatRupiah(parseFloat(transactionForm.amount || '0')).replace('Rp', '').trim()}
                               onChange={handleAmountChange}
-                              className="border-2 border-black pl-8 text-right" 
+                              className="h-12 border-2 border-black rounded-xl pl-10 text-right text-lg font-bold" 
                             />
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label>Category</Label>
+                        <Label className="font-bold">Category</Label>
                         <Select
                           value={transactionForm.category}
                           onValueChange={(value) =>
                             setTransactionForm({ ...transactionForm, category: value })
                           }
                         >
-                          <SelectTrigger className="border-2 border-black">
+                          <SelectTrigger className="h-12 border-2 border-black rounded-xl font-medium">
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
-                          <SelectContent className="border-2 border-black">
+                          <SelectContent className="border-2 border-black rounded-xl">
                             {(transactionForm.type === 'expense' ? expenseCategories : incomeCategories).map((cat) => (
-                              <SelectItem key={cat} value={cat}>
-                                {cat}
-                              </SelectItem>
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Date</Label>
-                        <Input
-                          type="date"
-                          value={transactionForm.date}
-                          onChange={(e) =>
-                            setTransactionForm({ ...transactionForm, date: e.target.value })
-                          }
-                          className="border-2 border-black"
-                        />
+                        <Label className="font-bold">Date</Label>
+                        <Input type="date" value={transactionForm.date} onChange={(e) => setTransactionForm({...transactionForm, date: e.target.value})} className="h-12 border-2 border-black rounded-xl" />
                       </div>
                       <div className="space-y-2">
-                        <Label>Description (Optional)</Label>
-                        <Textarea
-                          placeholder="Add notes..."
-                          value={transactionForm.description}
-                          onChange={(e) =>
-                            setTransactionForm({ ...transactionForm, description: e.target.value })
-                          }
-                          className="border-2 border-black"
-                        />
+                        <Label className="font-bold">Description</Label>
+                        <Textarea placeholder="Notes..." value={transactionForm.description} onChange={(e) => setTransactionForm({...transactionForm, description: e.target.value})} className="border-2 border-black rounded-xl min-h-[80px]" />
                       </div>
                     </TabsContent>
                   </Tabs>
-                  <Button
-                    onClick={handleSaveTransaction}
-                    className="w-full bg-black text-white hover:bg-gray-800 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
-                  >
-                    Add Transaction
+                  <Button onClick={handleSaveTransaction} className="w-full h-12 rounded-full bg-black text-white font-bold border-2 border-black hover:bg-gray-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] transition-all">
+                    Save Transaction
                   </Button>
                 </DialogContent>
               </Dialog>
-            </div>
           </div>
 
-          {/* --- BARU: Card Filter Tanggal --- */}
-          <Card className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row items-end gap-4">
-                <div className="flex items-center gap-2 w-full md:w-auto mb-2 md:mb-0">
-                    <CalendarIcon className="w-5 h-5 text-gray-500" />
-                    <span className="font-bold text-sm">Filter Date:</span>
+          {/* Filter Section (Updated Design) */}
+          <div className="mb-8 bg-[#D2F65E] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-[2rem] p-6 md:p-8 relative overflow-hidden">
+              <div className="flex flex-col md:flex-row items-end gap-6 relative z-10">
+                <div className="flex items-center gap-3 w-full md:w-auto mb-2 md:mb-0">
+                    <div className="bg-black p-2 rounded-xl">
+                         <Filter className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="font-black text-2xl tracking-tight text-black">Filter</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4 flex-1 w-full">
-                  <div className="space-y-1">
-                    <Label htmlFor="startDate" className="text-xs text-gray-500">From</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate" className="text-xs font-black text-black/60 uppercase tracking-wider">From Date</Label>
                     <Input 
                       id="startDate"
                       type="date" 
                       value={dateFilter.startDate}
                       onChange={(e) => setDateFilter({...dateFilter, startDate: e.target.value})}
-                      className="border-2 border-black h-9"
+                      className="h-12 border-2 border-black rounded-xl font-bold bg-white focus:ring-black/10"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="endDate" className="text-xs text-gray-500">To</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate" className="text-xs font-black text-black/60 uppercase tracking-wider">To Date</Label>
                     <Input 
                       id="endDate"
                       type="date" 
                       value={dateFilter.endDate}
                       onChange={(e) => setDateFilter({...dateFilter, endDate: e.target.value})}
-                      className="border-2 border-black h-9"
+                      className="h-12 border-2 border-black rounded-xl font-bold bg-white focus:ring-black/10"
                     />
                   </div>
                 </div>
-                {/* Tombol Clear hanya muncul jika ada filter yang aktif */}
                 {(dateFilter.startDate || dateFilter.endDate) && (
                   <Button 
-                    variant="ghost" 
                     onClick={clearFilters}
-                    className="h-9 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 w-full md:w-auto border-2 border-transparent hover:border-red-200"
+                    className="h-12 px-6 rounded-xl bg-white border-2 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 font-black uppercase tracking-wide shadow-sm"
                   >
-                    <X className="w-4 h-4 mr-2" />
-                    Clear
+                    <X className="w-5 h-5 mr-2" /> Clear
                   </Button>
                 )}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-xl font-bold">All Transactions</CardTitle>
-                <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
-                  {filteredTransactions.length} Record{filteredTransactions.length !== 1 && 's'}
-                </span>
+              
+              {/* Decoration */}
+              <div className="absolute -right-6 -bottom-10 opacity-10">
+                 <Filter className="w-40 h-40" />
               </div>
-            </CardHeader>
-            <CardContent>
-              {filteredTransactions.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-600 mb-2">No transactions found</p>
-                  {(dateFilter.startDate || dateFilter.endDate) ? (
-                      <p className="text-sm text-gray-500">Try adjusting your date filters or clearing them.</p>
-                  ) : (
-                      <p className="text-sm text-gray-500">
-                        Click &quot;Add Transaction&quot; to get started
-                      </p>
-                  )}
+          </div>
+
+          {/* Transaction List */}
+          <div className="space-y-4">
+            {filteredTransactions.length === 0 ? (
+                <div className="bg-white border-2 border-dashed border-gray-300 rounded-[2rem] p-12 text-center">
+                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Search className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-1">No transactions found</h3>
+                  <p className="text-gray-500 text-sm">Try adjusting your filters or add a new one.</p>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredTransactions.map((transaction) => (
-                    <Link
-                      href={`/transactions/${transaction.id}`}
-                      key={transaction.id}
-                      className="block"
-                    >
-                      <div
-                        className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border-2 border-black hover:bg-gray-100 transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-start gap-4 flex-1 mb-3 md:mb-0">
-                          <div
-                            className={`p-2 rounded-lg border-2 border-black ${
-                              transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
-                            }`}
-                          >
-                            {transaction.type === 'income' ? (
-                              <TrendingUp className="w-5 h-5" />
-                            ) : (
-                              <TrendingDown className="w-5 h-5" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-semibold">{transaction.category}</p>
-                            <p className="text-sm text-gray-600">
-                              {new Date(transaction.date).toLocaleDateString('id-ID', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              })}
-                            </p>
-                            {transaction.description && (
-                              <p className="text-sm text-gray-500 mt-1 line-clamp-1">
-                                {transaction.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-between items-center w-full md:w-auto">
-                          <div
-                            className={`text-lg font-bold md:text-xl md:text-right flex-1 ${
-                              transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                            }`}
-                          >
-                            {transaction.type === 'income' ? '+' : '-'}
-                            {formatRupiah(transaction.amount)}
-                          </div>
-                          
-                          <div className="flex items-center gap-2 md:gap-4 ml-4">
-                            <div
-                              className="border-2 border-black hover:bg-yellow-50 h-8 w-8 flex items-center justify-center"
-                              title="Edit Transaction"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </div>
-                            
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={(e) => handleDeleteTransaction(e, transaction.id)}
-                              className="border-2 border-black hover:bg-red-50 h-8 w-8"
-                              title="Delete Transaction"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+            ) : (
+                filteredTransactions.map((transaction) => (
+                    <Link href={`/transactions/${transaction.id}`} key={transaction.id} className="block group">
+                        <Card className="border-2 border-black shadow-sm hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] overflow-hidden">
+                            <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-black shrink-0 ${transaction.type === 'income' ? 'bg-[#D2F65E]' : 'bg-white'}`}>
+                                        {transaction.type === 'income' ? <TrendingUp className="w-6 h-6 text-black" /> : <TrendingDown className="w-6 h-6 text-black" />}
+                                    </div>
+                                    <div>
+                                        <p className="font-black text-lg">{transaction.category}</p>
+                                        <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                                            <CalendarIcon className="w-3 h-3" />
+                                            {new Date(transaction.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                        </div>
+                                        {transaction.description && (
+                                            <p className="text-xs text-gray-400 mt-1 line-clamp-1">{transaction.description}</p>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto border-t sm:border-0 border-gray-100 pt-4 sm:pt-0">
+                                    <span className={`text-xl font-black ${transaction.type === 'income' ? 'text-green-600' : 'text-black'}`}>
+                                        {transaction.type === 'income' ? '+' : '-'} {formatRupiah(transaction.amount).replace('Rp', 'Rp ')}
+                                    </span>
+                                    
+                                    <div className="flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                        <div className="h-9 w-9 rounded-full border-2 border-gray-200 flex items-center justify-center hover:border-black hover:bg-black hover:text-white transition-colors">
+                                            <Edit className="w-4 h-4" />
+                                        </div>
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-9 w-9 rounded-full hover:bg-red-50 hover:text-red-600 transition-colors"
+                                            onClick={(e) => handleDeleteTransaction(e, transaction.id)}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                ))
+            )}
+          </div>
+
         </div>
       </div>
     </ProtectedRoute>

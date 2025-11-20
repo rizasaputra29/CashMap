@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { useFinance, SavingsGoal } from '@/contexts/FinanceContext';
+import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { formatRupiah, cleanRupiah } from '@/lib/utils';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Calendar, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
@@ -40,7 +40,6 @@ export default function EditSavingsGoalPage() {
         });
         setIsLoading(false);
       } else {
-        // Coba lagi setelah 1 detik
         setTimeout(() => {
           const retryGoal = getGoalById(id);
           if (retryGoal) {
@@ -79,7 +78,7 @@ export default function EditSavingsGoalPage() {
           deadline: goalForm.deadline || undefined,
       });
       toast({ title: 'Success', description: 'Savings goal updated' });
-      router.push('/savings'); // Kembali ke list
+      router.push('/savings');
 
     } catch (e) {
         toast({ title: 'Error', description: 'Failed to update goal.', variant: 'destructive' });
@@ -92,91 +91,91 @@ export default function EditSavingsGoalPage() {
 
   if (isLoading) {
     return (
-      <ProtectedRoute>
-        <div className="min-h-screen flex items-center justify-center bg-white">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="mt-4 text-lg font-semibold">Loading Goal...</p>
-          </div>
-        </div>
-      </ProtectedRoute>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-16 h-16 border-4 border-black border-t-[#D2F65E] rounded-full animate-spin"></div>
+      </div>
     );
   }
 
   return (
     <ProtectedRoute>
-      <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href="/savings" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-black transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Savings Goals
-          </Link>
-        </div>
+      <div className="min-h-screen bg-gray-50/50 pb-24 font-sans selection:bg-[#D2F65E]">
+        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          
+          <div className="mb-8">
+            <Link href="/savings" className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-black transition-colors">
+              <ArrowLeft className="w-4 h-4" /> Back to Savings
+            </Link>
+            <h1 className="text-3xl md:text-4xl font-black mt-4 tracking-tight">Edit Goal</h1>
+          </div>
 
-        <Card className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Edit Savings Goal</CardTitle>
-            <CardDescription>
-              Update the details for your goal.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label>Goal Name</Label>
-                <Input
-                  placeholder="e.g., Emergency Fund, Vacation"
-                  value={goalForm.name}
-                  onChange={(e) => setGoalForm({ ...goalForm, name: e.target.value })}
-                  className="border-2 border-black"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Target Amount</Label>
-                <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
-                    <Input
-                      type="text"
-                      placeholder="10.000.000"
-                      value={getFormattedGoalValue('targetAmount')}
-                      onChange={(e) => handleGoalAmountChange('targetAmount', e)}
-                      className="border-2 border-black pl-8 text-right"
-                    />
+          <Card className="border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-[2.5rem] overflow-hidden bg-white">
+            <CardHeader className="px-8 pt-8 pb-2 bg-white border-b-2 border-gray-100">
+              <CardTitle className="text-2xl font-black">Update Details</CardTitle>
+              <CardDescription className="font-medium text-gray-600">Adjust your savings target or progress.</CardDescription>
+            </CardHeader>
+            
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="font-bold text-gray-700 text-sm uppercase tracking-wider">Goal Name</Label>
+                  <Input
+                    placeholder="e.g., Emergency Fund"
+                    value={goalForm.name}
+                    onChange={(e) => setGoalForm({ ...goalForm, name: e.target.value })}
+                    className="h-14 border-2 border-black rounded-2xl text-lg font-bold px-4"
+                  />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Current Amount</Label>
-                <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
-                    <Input
-                      type="text"
-                      placeholder="0"
-                      value={getFormattedGoalValue('currentAmount')}
-                      onChange={(e) => handleGoalAmountChange('currentAmount', e)}
-                      className="border-2 border-black pl-8 text-right"
-                    />
+                
+                <div className="space-y-2">
+                  <Label className="font-bold text-gray-700 text-sm uppercase tracking-wider">Target Amount</Label>
+                  <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-black text-xl">Rp</span>
+                      <Input
+                        type="text"
+                        placeholder="10.000.000"
+                        value={getFormattedGoalValue('targetAmount')}
+                        onChange={(e) => handleGoalAmountChange('targetAmount', e)}
+                        className="h-16 border-2 border-black rounded-2xl pl-12 text-right text-2xl font-black bg-gray-50 focus:bg-white transition-all"
+                      />
+                  </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label className="font-bold text-gray-700 flex items-center gap-2"><Wallet className="w-4 h-4" /> Current Saved</Label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">Rp</span>
+                            <Input
+                            type="text"
+                            placeholder="0"
+                            value={getFormattedGoalValue('currentAmount')}
+                            onChange={(e) => handleGoalAmountChange('currentAmount', e)}
+                            className="h-12 border-2 border-black rounded-xl pl-10 text-right font-bold"
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="font-bold text-gray-700 flex items-center gap-2"><Calendar className="w-4 h-4" /> Deadline</Label>
+                        <Input
+                        type="date"
+                        value={goalForm.deadline}
+                        onChange={(e) => setGoalForm({ ...goalForm, deadline: e.target.value })}
+                        className="h-12 border-2 border-black rounded-xl font-bold"
+                        />
+                    </div>
+                </div>
+                
+                <Button
+                  onClick={handleSaveGoal}
+                  className="w-full h-14 mt-4 rounded-full bg-black text-white text-lg font-bold hover:scale-[1.02] transition-transform shadow-md hover:bg-gray-900"
+                >
+                  <Save className="w-5 h-5 mr-2" /> Save Changes
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Deadline (Optional)</Label>
-                <Input
-                  type="date"
-                  value={goalForm.deadline}
-                  onChange={(e) => setGoalForm({ ...goalForm, deadline: e.target.value })}
-                  className="border-2 border-black"
-                />
-              </div>
-              
-              <Button
-                onClick={handleSaveGoal}
-                className="w-full bg-black text-white hover:bg-gray-800 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </ProtectedRoute>
   );

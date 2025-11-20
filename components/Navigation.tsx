@@ -6,10 +6,9 @@ import Image from 'next/image';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-// NEW: Import BookOpen untuk logo, seperti contoh
-import { LayoutDashboard, TrendingUp, Target, LogOut, BookOpen } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Target, LogOut } from 'lucide-react';
 
-// --- Nav Items (Tanpa Profile, karena profile ada di desktop/bottom) ---
+// --- Nav Items ---
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/transactions', label: 'Transactions', icon: TrendingUp },
@@ -18,9 +17,8 @@ const navItems = [
 
 /**
  * =======================
- * Navigasi Atas (Desktop)
+ * Desktop Navigation
  * =======================
- * Ditampilkan HANYA di desktop (hidden lg:flex)
  */
 function DesktopNav() {
   const pathname = usePathname();
@@ -33,62 +31,69 @@ function DesktopNav() {
     .toUpperCase()
     .slice(0, 2) || 'US';
 
-  // Style: 'sticky' akan menempel di atas saat scroll
-  // 'hidden lg:flex' - HANYA tampil di desktop
   return (
-    <nav className="hidden lg:flex border-b-2 border-black bg-white sticky top-0 z-50">
+    <nav className="hidden lg:flex border-b-2 border-black bg-white/90 backdrop-blur-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-20 items-center">
           
-          {/* Sisi Kiri: Logo & Link Navigasi */}
-          <div className="flex items-center space-x-6">
+          {/* Left: Logo & Links */}
+          <div className="flex items-center gap-8">
             
-            {/* Logo (Mirip contoh) */}
-            <Link href="/dashboard" className="flex items-center gap-2 text-black hover:opacity-80 transition-opacity">
-              <Image className='rounded-md' src="/apple-touch-icon.png" alt="Wallet Icon" width={32} height={32} />
-              <span className="font-bold text-lg">CashMap</span>
+            {/* Logo: Styled to match Landing Page */}
+            <Link href="/dashboard" className="flex items-center gap-3 group">
+              <span className="font-black text-xl tracking-tight">CashMap</span>
             </Link>
 
-            {/* Link Navigasi */}
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
-              
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`inline-flex items-center px-1 pt-1 border-b-4 text-sm font-semibold transition-colors ${
-                    isActive
-                      ? 'border-black text-black'
-                      : 'border-transparent text-gray-500 hover:text-black hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 mr-2" />
-                  {item.label}
-                </Link>
-              );
-            })}
+            {/* Navigation Links: Pill Shaped */}
+            <div className="flex gap-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+                
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`
+                      inline-flex items-center px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 border-2
+                      ${isActive 
+                        ? 'bg-black text-[#D2F65E] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-[-1px]' 
+                        : 'bg-transparent text-gray-600 border-transparent hover:bg-gray-100 hover:border-black/10'
+                      }
+                    `}
+                  >
+                    <Icon className={`w-4 h-4 mr-2 ${isActive ? 'text-[#D2F65E]' : 'text-gray-500'}`} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Sisi Kanan: Profile (Avatar) & Logout */}
+          {/* Right: Profile & Logout */}
           <div className="flex items-center gap-4">
-            <Link href="/profile" className="hover:opacity-80 transition-opacity">
-              <Avatar className="h-10 w-10 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                <AvatarImage src={user?.avatarUrl || undefined} alt={user?.fullName} />
-                <AvatarFallback className="bg-black text-white">
-                  {userInitials}
-                </AvatarFallback>
-              </Avatar>
+            <Link href="/profile">
+              <div className="flex items-center gap-3 pl-2 pr-1 py-1 rounded-full border-2 border-transparent hover:border-black hover:bg-gray-50 transition-all cursor-pointer group">
+                <span className="text-sm font-bold hidden xl:block group-hover:text-black text-gray-600">
+                    {user?.fullName.split(' ')[0]}
+                </span>
+                <Avatar className="h-9 w-9 border-2 border-black shadow-sm">
+                    <AvatarImage src={user?.avatarUrl || undefined} alt={user?.fullName} className="object-cover" />
+                    <AvatarFallback className="bg-[#D2F65E] text-black font-bold text-xs">
+                    {userInitials}
+                    </AvatarFallback>
+                </Avatar>
+              </div>
             </Link>
             
             <Button
               onClick={logout}
-              variant="outline"
-              className="border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all"
+              variant="ghost"
+              size="icon"
+              className="rounded-full hover:bg-red-50 hover:text-red-600 transition-colors w-10 h-10"
+              title="Logout"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
+              <LogOut className="w-5 h-5" />
             </Button>
           </div>
           
@@ -100,10 +105,8 @@ function DesktopNav() {
 
 /**
  * =======================
- * Navigasi Bawah (Mobile)
+ * Mobile Navigation
  * =======================
- * Ditampilkan HANYA di mobile (block lg:hidden)
- * Berisi 5 item: 3 navItems + Profile (Avatar) + Logout (Button)
  */
 function BottomNav() {
   const pathname = usePathname();
@@ -116,13 +119,11 @@ function BottomNav() {
     .toUpperCase()
     .slice(0, 2) || 'US';
 
-  // 'block lg:hidden' - HANYA tampil di mobile
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 block border-t-2 border-black bg-white lg:hidden">
-      {/* Grid 5 kolom: 3 untuk nav, 1 untuk profile, 1 untuk logout */}
-      <div className="grid h-20 grid-cols-5 p-2 items-center justify-around">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 block border-t-2 border-black bg-white lg:hidden pb-safe">
+      <div className="grid h-16 grid-cols-5 items-center justify-around px-2 gap-1">
         
-        {/* Item 1-3: Dashboard, Transactions, Savings */}
+        {/* Nav Items */}
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
@@ -131,44 +132,47 @@ function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center p-2 transition-colors ${
-                isActive
-                  ? 'text-black' // Warna aktif
-                  : 'text-gray-500 hover:text-black' // Warna non-aktif
-              }`}
+              className="flex flex-col items-center justify-center h-full w-full"
             >
-              <Icon className="h-6 w-6" />
-              <span className="mt-1 text-xs font-semibold">{item.label}</span>
+              <div className={`
+                flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-all duration-200
+                ${isActive ? 'bg-black text-[#D2F65E] shadow-md translate-y-[-4px]' : 'text-gray-400 hover:bg-gray-50 hover:text-black'}
+              `}>
+                <Icon className="h-5 w-5" strokeWidth={isActive ? 3 : 2} />
+              </div>
             </Link>
           );
         })}
 
-        {/* Item 4: Profile (menggunakan Avatar) */}
+        {/* Profile Link */}
         <Link
           href="/profile"
-          className={`flex flex-col items-center justify-center p-2 transition-colors ${
-            pathname.startsWith('/profile')
-              ? 'text-black'
-              : 'text-gray-500 hover:text-black'
-          }`}
+          className="flex flex-col items-center justify-center h-full w-full"
         >
-          <Avatar className="h-7 w-7 border-2 border-black">
-            <AvatarImage src={user?.avatarUrl || undefined} alt={user?.fullName} />
-            <AvatarFallback className="bg-black text-white text-xs">
-              {userInitials}
-            </AvatarFallback>
-          </Avatar>
-          <span className="mt-1 text-xs font-semibold">Profile</span>
+           <div className={`
+                flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-all duration-200
+                ${pathname.startsWith('/profile') 
+                  ? 'bg-black p-1 shadow-md translate-y-[-4px]' 
+                  : 'p-1 hover:bg-gray-50'}
+              `}>
+            <Avatar className={`h-8 w-8 border-2 ${pathname.startsWith('/profile') ? 'border-[#D2F65E]' : 'border-black'}`}>
+                <AvatarImage src={user?.avatarUrl || undefined} alt={user?.fullName} className="object-cover" />
+                <AvatarFallback className="bg-[#D2F65E] text-black text-[10px] font-black">
+                {userInitials}
+                </AvatarFallback>
+            </Avatar>
+          </div>
         </Link>
 
-        {/* Item 5: Logout (Button) */}
+        {/* Logout */}
         <button
           type="button"
           onClick={() => logout()}
-          className="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-black transition-colors"
+          className="flex flex-col items-center justify-center h-full w-full"
         >
-          <LogOut className="h-6 w-6" />
-          <span className="mt-1 text-xs font-semibold">Logout</span>
+          <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-600 transition-all">
+            <LogOut className="h-5 w-5" strokeWidth={2} />
+          </div>
         </button>
 
       </div>
@@ -176,12 +180,6 @@ function BottomNav() {
   );
 }
 
-/**
- * =======================
- * Komponen Ekspor Utama
- * =======================
- * Merender DesktopNav (hidden-mobile) dan BottomNav (hidden-desktop)
- */
 export function Navigation() {
   return (
     <>

@@ -152,6 +152,7 @@ export default function ProfilePage() {
                         <h2 className="text-xl font-black mt-2">{user.fullName}</h2>
                         <p className="text-gray-500 text-sm font-medium mb-6">{user.email}</p>
 
+                        {/* FIXED: Moved classes to CldUploadButton and removed nested Button */}
                         <CldUploadButton
                             options={{
                             sources: ['local', 'url', 'camera'],
@@ -162,15 +163,10 @@ export default function ProfilePage() {
                             }}
                             uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
                             onSuccess={handleUploadSuccess}
-                            className="w-full"
+                            className="w-full h-10 rounded-full border-2 border-black hover:bg-black hover:text-white font-bold transition-colors inline-flex items-center justify-center"
                         >
-                            <Button
-                            variant="outline"
-                            className="w-full h-12 rounded-full border-2 border-black hover:bg-black hover:text-white font-bold transition-colors"
-                            >
                             <ImageIcon className="w-4 h-4 mr-2" />
                             Change Avatar
-                            </Button>
                         </CldUploadButton>
                     </CardContent>
                 </Card>

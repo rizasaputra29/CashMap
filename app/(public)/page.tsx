@@ -6,13 +6,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import LogoLoop from '@/components/ui/logo-loop';
 import { 
   ArrowRight, 
   Wallet, 
   PieChart, 
   Target, 
-  ShieldCheck, 
-  TrendingUp
+  TrendingUp,
+  Github,
+  Twitter,
+  Linkedin,
+  Instagram
 } from 'lucide-react';
 import { motion, Variants } from 'framer-motion';
 
@@ -47,6 +51,17 @@ export default function Home() {
   const stagger: Variants = {
     visible: { transition: { staggerChildren: 0.1 } }
   };
+
+  const techStackLogos = [
+    { src: "https://cdn.worldvectorlogo.com/logos/next-js.svg", alt: "Next.js", title: "Next.js", width: 100, height: 40 },
+    { src: "https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg", alt: "React", title: "React", width: 100, height: 40 },
+    { src: "https://upload.wikimedia.org/wikipedia/commons/4/4c/Typescript_logo_2020.svg", alt: "TypeScript", title: "TypeScript", width: 100, height: 40 },
+    { src: "https://upload.wikimedia.org/wikipedia/commons/d/d5/Tailwind_CSS_Logo.svg", alt: "Tailwind CSS", title: "Tailwind CSS", width: 100, height: 40 },
+    { src: "https://cdn.worldvectorlogo.com/logos/prisma-3.svg", alt: "Prisma", title: "Prisma", width: 100, height: 40 },
+    { src: "https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg", alt: "PostgreSQL", title: "PostgreSQL", width: 100, height: 40 },
+    { src: "https://images.seeklogo.com/logo-png/51/1/shadcn-ui-logo-png_seeklogo-519786.png", alt: "Shadcn UI", title: "Shadcn UI", width: 100, height: 40 },
+    { src: "https://cdn.worldvectorlogo.com/logos/framer-motion.svg", alt: "Framer Motion", title: "Framer Motion", width: 100, height: 40 },
+  ];
 
   return (
     <main className="min-h-screen bg-white text-black overflow-x-hidden font-sans selection:bg-[#D2F65E]">
@@ -179,22 +194,25 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* --- PARTNERS / TRUST SECTION --- */}
-      <section className="py-6">
+      {/* --- TECH STACK LOGO LOOP --- */}
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Safe & Secure Platform</p>
-          <motion.div 
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 1 }}
-            className="flex flex-wrap justify-center gap-x-12 gap-y-8 grayscale opacity-50"
-          >
-            {[1, 2, 3, 4].map((_, i) => (
-              <div key={i} className="flex items-center gap-2 font-bold text-lg">
-                 <ShieldCheck className="w-5 h-5" /> Security Type {i + 1}
-              </div>
-            ))}
-          </motion.div>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-12">Powered By Modern Tech Stack</p>
+          
+          <div className="w-full overflow-hidden grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+            <LogoLoop 
+              logos={techStackLogos} 
+              speed={60} 
+              direction="left"
+              logoHeight={40}
+              gap={40}
+              pauseOnHover={true}
+              scaleOnHover={true}
+              fadeOut={true}
+              fadeOutColor="#ffffff"
+              ariaLabel="Tech Stack Logos"
+            />
+          </div>
         </div>
       </section>
 
@@ -324,9 +342,27 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
-      
-      {/* FOOTER REMOVED AS REQUESTED */}
-      
+      {/* --- CTA FOOTER --- */}
+      <section className=" text-black py-20 px-4 sm:px-6 lg:px-8">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="max-w-4xl mx-auto text-center"
+        >
+          
+          <div className="mt-16 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
+            <p>&copy; 2025 CashMap. All rights reserved.</p>
+            
+            {/* Quick Links / Socials */}
+            <div className="flex gap-6 mt-4 md:mt-0 items-center">
+              <Link href="https://github.com/rizasaputra29" className="hover:text-[#7089ca] transition-colors"><Github className="w-5 h-5" /></Link>
+              <Link href="https://www.linkedin.com/in/rizasaputra29/" className="hover:text-[#4f7de8] transition-colors"><Linkedin className="w-5 h-5" /></Link>
+              <Link href="https://www.instagram.com/rizasaputra29/" className="hover:text-[#ef4d4d] transition-colors"><Instagram className="w-5 h-5" /></Link>
+            </div>
+          </div>
+        </motion.div>
+      </section>
     </main>
   );
 }

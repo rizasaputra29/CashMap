@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SimpleProgress } from '@/components/SimpleProgress';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Target, Check, DollarSign, Edit, X, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Target, Check, Edit, X, CheckCircle2, ArrowLeft, Save, Wallet, Calendar } from 'lucide-react';
 import { formatRupiah, cleanRupiah } from '@/lib/utils';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
@@ -32,17 +32,26 @@ export default function SavingsPage() {
 
   // --- Handlers ---
   const handleAddAmountValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAddAmountValue(cleanRupiah(e.target.value));
+    // Allow empty string for better typing experience
+    const raw = e.target.value;
+    if (raw === '') {
+        setAddAmountValue('');
+        return;
+    }
+    setAddAmountValue(cleanRupiah(raw));
   };
 
   const handleAddAmount = async (goalId: string) => {
     const cleanedAmount = cleanRupiah(addAmountValue);
     if (!cleanedAmount || parseFloat(cleanedAmount) <= 0) return;
+    
     const goal = savingsGoals.find((g) => g.id === goalId);
     if (!goal) return;
+    
     const addedAmount = parseFloat(cleanedAmount);
     const newAmount = goal.currentAmount + addedAmount;
     const isCompleted = newAmount >= goal.targetAmount;
+    
     try {
         await updateSavingsGoal(goalId, { currentAmount: newAmount, isCompleted });
         toast({ title: 'Success', description: isCompleted ? 'Goal completed! 🎉' : `Added ${formatRupiah(addedAmount)}` });
@@ -94,6 +103,14 @@ export default function SavingsPage() {
       } catch (e) {
           toast({ title: 'Error', description: 'Failed to create goal.', variant: 'destructive' });
       }
+  };
+
+  // Helper to format the input display safely
+  const getDisplayAmount = (val: string) => {
+    if (!val) return '';
+    const num = parseFloat(val);
+    if (isNaN(num)) return '';
+    return formatRupiah(num).replace('Rp', '').trim();
   };
 
   const activeGoals = savingsGoals.filter((g) => !g.isCompleted);
@@ -197,7 +214,7 @@ export default function SavingsPage() {
                                         </div>
                                         <div className="text-right">
                                             <p className="text-xs text-gray-500 font-bold">Target</p>
-                                            <p className="text-xl font-black">{formatRupiah(goal.targetAmount)}</p>
+                                            <p className="text-lg font-black">{formatRupiah(goal.targetAmount)}</p>
                                         </div>
                                     </div>
                                     
@@ -211,7 +228,13 @@ export default function SavingsPage() {
                                 </div>
 
                                 {/* Quick Add Amount */}
-                                <div className="mt-6 pt-4 border-t border-dashed border-gray-200" onClick={(e) => e.preventDefault()}>
+                                <div 
+                                    className="mt-6 pt-4 border-t border-dashed border-gray-200" 
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                    }}
+                                >
                                     {addAmountGoalId === goal.id ? (
                                         <div className="flex gap-2 animate-in fade-in zoom-in-95 duration-200">
                                             <div className="relative flex-1">
@@ -220,21 +243,36 @@ export default function SavingsPage() {
                                                     autoFocus
                                                     placeholder="0" 
                                                     className="h-10 pl-8 pr-2 border-2 border-black rounded-xl text-sm font-bold"
-                                                    value={formatRupiah(parseFloat(addAmountValue || '0')).replace('Rp', '').trim()}
+                                                    value={getDisplayAmount(addAmountValue)}
                                                     onChange={handleAddAmountValueChange}
                                                     onClick={(e) => e.stopPropagation()}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') handleAddAmount(goal.id);
+                                                    }}
                                                 />
                                             </div>
                                             <Button size="sm" onClick={() => handleAddAmount(goal.id)} className="rounded-xl bg-[#D2F65E] text-black border-2 border-black hover:bg-[#c3e655] font-bold">
                                                 <Check className="w-4 h-4" />
                                             </Button>
-                                            <Button size="sm" variant="outline" onClick={() => { setAddAmountGoalId(null); setAddAmountValue(''); }} className="rounded-xl border-2 border-gray-200 hover:border-black text-gray-400 hover:text-black">
+                                            <Button 
+                                                size="sm" 
+                                                variant="outline" 
+                                                onClick={() => { 
+                                                    setAddAmountGoalId(null); 
+                                                    setAddAmountValue(''); 
+                                                }} 
+                                                className="rounded-xl border-2 border-gray-200 hover:border-black text-gray-400 hover:text-black"
+                                            >
                                                 <X className="w-4 h-4" />
                                             </Button>
                                         </div>
                                     ) : (
                                         <Button 
-                                            onClick={(e) => { e.stopPropagation(); setAddAmountGoalId(goal.id); }} 
+                                            onClick={(e) => { 
+                                                e.preventDefault(); 
+                                                e.stopPropagation(); 
+                                                setAddAmountGoalId(goal.id); 
+                                            }} 
                                             variant="outline" 
                                             className="w-full rounded-xl border-2 border-black hover:bg-black hover:text-white font-bold transition-colors"
                                         >

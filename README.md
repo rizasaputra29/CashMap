@@ -13,7 +13,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Ready-purple?style=for-the-badge&logo=pwa)](https://web.dev/progressive-web-apps/)
 
-[Lihat Demo](https://cashmap.vercel.app) · [Lapor Bug](https://github.com/rizasaputra29/cashmap/issues) · [Request Fitur](https://github.com/rizasaputra29/cashmap/issues)
+[Lihat Demo](https://cash-map.vercel.app/) · [Lapor Bug](https://github.com/rizasaputra29/cashmap/issues) · [Request Fitur](https://github.com/rizasaputra29/cashmap/issues)
 
 </div>
 

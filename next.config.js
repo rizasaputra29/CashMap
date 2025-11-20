@@ -1,20 +1,22 @@
 /** @type {import('next').NextConfig} */
+const runtimeCaching = require('next-pwa/cache');
+
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  // Add these for better PWA support
-  buildExcludes: [/middleware-manifest\.json$/],
-  publicExcludes: ['!robots.txt', '!sitemap.xml']
+  disable: false, 
+  importScripts: ['/custom-sw.js'], // Pastikan file ini ada di folder public!
+  runtimeCaching: [
+    // ... caching rules Anda
+    ...runtimeCaching,
+  ],
 });
 
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // Hapus blok eslint: { ... }
   images: { 
-    unoptimized: false,
+    unoptimized: false, 
     remotePatterns: [
       { protocol: 'https', hostname: 'cdn.worldvectorlogo.com' },
       { protocol: 'https', hostname: 'upload.wikimedia.org' },

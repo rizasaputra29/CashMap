@@ -1,5 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 
 export type LogoItem =
   | {
@@ -281,26 +282,21 @@ export const LogoLoop = React.memo<LogoLoopProps>(
             {(item as any).node}
           </span>
         ) : (
-          <img
-            className={cx(
-              'h-[var(--logoloop-logoHeight)] w-auto block object-contain',
-              '[-webkit-user-drag:none] pointer-events-none',
-              '[image-rendering:-webkit-optimize-contrast]',
-              'motion-reduce:transition-none',
-              scaleOnHover &&
-                'transition-transform duration-300 ease-in-out group-hover/item:scale-120'
-            )}
-            src={(item as any).src}
-            srcSet={(item as any).srcSet}
-            sizes={(item as any).sizes}
-            width={(item as any).width}
-            height={(item as any).height}
-            alt={(item as any).alt ?? ''}
-            title={(item as any).title}
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-          />
+            <div className="relative h-[var(--logoloop-logoHeight)] w-auto">
+            {/* Use Next.js Image for optimization and CLS prevention */}
+            <Image
+               className={cx(
+                 'h-full w-auto object-contain',
+                 'pointer-events-none',
+                 scaleOnHover && 'transition-transform duration-300 ease-in-out group-hover/item:scale-120'
+               )}
+               src={(item as any).src}
+               alt={(item as any).alt ?? ''}
+               width={(item as any).width || 100} // Ensure your data has width
+               height={(item as any).height || 40} // Ensure your data has height
+               loading="lazy"
+            />
+         </div>
         );
 
         const itemAriaLabel = isNodeItem

@@ -22,29 +22,6 @@ export const metadata: Metadata = {
   title: 'Cash Map',
   description: 'Track your income, expenses, and savings goals',
   manifest: '/site.webmanifest',
-  // themeColor DIHAPUS dari sini karena sudah pindah ke viewport
-  icons: {
-    icon: '/android-chrome-512x512.png',
-    apple: '/apple-touch-icon.png',
-    other: [
-      {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '32x32',
-        url: '/favicon-32x32.png',
-      },
-      {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '16x16',
-        url: '/favicon-16x16.png',
-      },
-       {
-         rel: 'shortcut icon',
-         url: '/favicon.ico',
-       },
-    ],
-  },
 };
 
 export default function RootLayout({

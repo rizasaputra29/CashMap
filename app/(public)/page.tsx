@@ -59,7 +59,7 @@ export default function Home() {
     { src: "https://upload.wikimedia.org/wikipedia/commons/d/d5/Tailwind_CSS_Logo.svg", alt: "Tailwind CSS", title: "Tailwind CSS", width: 100, height: 40 },
     { src: "https://cdn.worldvectorlogo.com/logos/prisma-3.svg", alt: "Prisma", title: "Prisma", width: 100, height: 40 },
     { src: "https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg", alt: "PostgreSQL", title: "PostgreSQL", width: 100, height: 40 },
-    { src: "https://images.seeklogo.com/logo-png/51/1/shadcn-ui-logo-png_seeklogo-519786.png", alt: "Shadcn UI", title: "Shadcn UI", width: 100, height: 40 },
+    { src: "https://lucide.dev/library-logos/shadcn-ui-dark.svg", alt: "Shadcn UI", title: "Shadcn UI", width: 100, height: 40 },
     { src: "https://cdn.worldvectorlogo.com/logos/framer-motion.svg", alt: "Framer Motion", title: "Framer Motion", width: 100, height: 40 },
   ];
 

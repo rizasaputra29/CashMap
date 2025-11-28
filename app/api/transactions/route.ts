@@ -1,9 +1,8 @@
-// path: app/api/transactions/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getUserIdFromRequest } from '@/lib/auth';
 
-// GET: Read all transactions for the user
+// GET: Read all transactions
 export async function GET(request: Request) {
   const userId = getUserIdFromRequest(request); 
 
@@ -18,12 +17,12 @@ export async function GET(request: Request) {
     });
     return NextResponse.json(transactions);
   } catch (error) {
-    console.error('Transactions GET API error:', error);
+    console.error('Transactions GET Error:', error);
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-// POST: Create a new transaction
+// POST: Create transaction
 export async function POST(request: Request) {
   const userId = getUserIdFromRequest(request); 
 
@@ -46,12 +45,12 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(newTransaction, { status: 201 });
   } catch (error) {
-    console.error('Transactions POST API error:', error);
+    console.error('Transactions POST Error:', error);
     return NextResponse.json({ message: 'Failed to create transaction' }, { status: 500 });
   }
 }
 
-// PUT: Update an existing transaction (Fitur Edit)
+// PUT: Update transaction
 export async function PUT(request: Request) {
     const userId = getUserIdFromRequest(request);
   
@@ -63,7 +62,7 @@ export async function PUT(request: Request) {
         const { id, type, amount, category, description, date } = await request.json();
 
         if (!id) {
-            return NextResponse.json({ message: 'Transaction ID is required for update' }, { status: 400 });
+            return NextResponse.json({ message: 'Transaction ID required' }, { status: 400 });
         }
   
         const updatedTransaction = await prisma.transaction.update({
@@ -78,12 +77,12 @@ export async function PUT(request: Request) {
         });
         return NextResponse.json(updatedTransaction);
     } catch (error) {
-      console.error('Transactions PUT API error:', error);
+      console.error('Transactions PUT Error:', error);
       return NextResponse.json({ message: 'Failed to update transaction' }, { status: 500 });
     }
 }
 
-// DELETE: Delete a transaction
+// DELETE: Delete transaction
 export async function DELETE(request: Request) {
     const userId = getUserIdFromRequest(request); 
   
@@ -96,7 +95,7 @@ export async function DELETE(request: Request) {
         const id = searchParams.get('id');
 
         if (!id) {
-            return NextResponse.json({ message: 'Transaction ID is required for deletion' }, { status: 400 });
+            return NextResponse.json({ message: 'Transaction ID required' }, { status: 400 });
         }
 
         await prisma.transaction.delete({
@@ -104,7 +103,7 @@ export async function DELETE(request: Request) {
         });
         return NextResponse.json({ message: 'Transaction deleted successfully' });
     } catch (error) {
-        console.error('Transactions DELETE API error:', error);
+        console.error('Transactions DELETE Error:', error);
         return NextResponse.json({ message: 'Failed to delete transaction' }, { status: 500 });
     }
 }

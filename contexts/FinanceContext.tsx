@@ -35,7 +35,6 @@ export interface SavingsGoal {
   isCompleted: boolean;
 }
 
-
 interface FinanceContextType {
   transactions: Transaction[];
   budgetLimit: BudgetLimit | null;
@@ -56,7 +55,6 @@ interface FinanceContextType {
   fetchFinanceData: () => Promise<void>;
   backupData: () => Promise<void>;
   importData: (file: File) => Promise<void>;
-  // --- FUNGSI BARU ---
   getTransactionById: (id: string) => Transaction | undefined;
   getGoalById: (id: string) => SavingsGoal | undefined;
 }
@@ -68,18 +66,27 @@ const getHeaders = (userId: string) => ({
     'X-User-Id': userId,
     'Content-Type': 'application/json',
 });
+
+// Helper untuk mendapatkan tanggal lokal 'YYYY-MM-DD' sesuai device user
+const getLocalToday = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const formatDate = (dateInput: Date | string): string => {
     const date = new Date(dateInput);
     if (isNaN(date.getTime())) return new Date().toISOString().split('T')[0];
     return date.toISOString().split('T')[0];
 };
-const isDateInPeriod = (date: string, start: string, end: string): boolean => {
-    return date >= start && date <= end;
-};
+
 const numberToCleanString = (num: number): string => {
     if (!isFinite(num)) return '0';
     return num.toFixed(2).replace(/\.00$/, '');
 }
+
 const calculateDaysRemaining = (startDateStr: string, endDateStr: string): number => {
     const today = new Date(startDateStr);
     const endDate = new Date(endDateStr);
@@ -284,7 +291,10 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const getAdjustedRemainingTotalBudget = useCallback((): number => {
     if (!budgetLimit || !budgetLimit.isActive) return 0;
-    const todayStr = new Date().toISOString().split('T')[0];
+    
+    // PERUBAHAN: Gunakan getLocalToday()
+    const todayStr = getLocalToday();
+    
     const startDate = new Date(budgetLimit.startDate);
     const yesterday = new Date(todayStr);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -328,7 +338,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   }, [budgetLimit, getDailyExpenses, getDynamicDailyLimit]);
 
   
-  // --- FUNGSI BARU UNTUK AMBIL DATA BY ID ---
   const getTransactionById = useCallback((id: string): Transaction | undefined => {
     return transactions.find(t => t.id === id);
   }, [transactions]);
@@ -360,7 +369,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         fetchFinanceData,
         backupData,
         importData,
-        // Ekspor fungsi baru
         getTransactionById,
         getGoalById,
       }}

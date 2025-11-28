@@ -1,17 +1,15 @@
-// rizasaputra29/financial-tracker/Financial-Tracker-6ef0fa1fb6903e1bd873f45840a83116c489026f/contexts/AuthContext.tsx
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter } from 'next/navigation'; // IMPORT BARU
 import { getClientUserSession, persistUserSession, clearUserSession, ClientUser } from '@/lib/auth'; 
 
 interface AuthContextType {
   user: ClientUser | null; 
   login: (email: string, password: string) => Promise<boolean>;
-  // PERUBAHAN: Tambahkan securityAnswer dan newPassword ke register
   register: (email: string, password: string, fullName: string, securityAnswer: string) => Promise<boolean>;
   logout: () => void;
   updateProfile: (data: Partial<ClientUser>) => Promise<boolean>; 
-  // PERUBAHAN: Tambahkan newPassword ke forgotPassword
   forgotPassword: (email: string, securityAnswer: string, newPassword: string) => Promise<boolean>;
   isLoading: boolean;
 }
@@ -21,6 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<ClientUser | null>(null); 
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter(); // INISIALISASI ROUTER
 
   useEffect(() => {
     const storedUser = getClientUserSession();
@@ -72,9 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // MODIFIKASI: Logout dengan Redirect ke Landing Page
   const logout = () => {
     clearUserSession();
     setUser(null);
+    router.push('/'); // Redirect otomatis ke Landing Page
   };
 
   const updateProfile = async (data: Partial<ClientUser>): Promise<boolean> => {
@@ -103,13 +104,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // PERUBAHAN: Implementasi forgotPassword dengan newPassword
   const forgotPassword = async (email: string, securityAnswer: string, newPassword: string): Promise<boolean> => {
     try {
         const response = await fetch('/api/auth/profile', {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
-            // Kirim newPassword ke API
             body: JSON.stringify({ email, securityAnswer, newPassword }), 
         });
         

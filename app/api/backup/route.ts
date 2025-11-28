@@ -1,13 +1,11 @@
-// path: app/api/backup/route.ts
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getUserIdFromRequest } from '@/lib/auth';
-import type { Transaction, BudgetLimit, SavingsGoal } from '@prisma/client'; // Import types
+import type { Transaction, BudgetLimit, SavingsGoal } from '@prisma/client'; 
 
 export const dynamic = 'force-dynamic'; 
 
-// GET: Export all user data
+// GET: Export Data
 export async function GET(request: Request) {
   const userId = getUserIdFromRequest(request); 
 
@@ -16,20 +14,18 @@ export async function GET(request: Request) {
   }
 
   try {
-    // FIX CALLABILITY: Menggunakan prisma.$transaction yang sederhana
+    // Menggunakan prisma.$transaction untuk efisiensi
     const [transactions, budgetLimit, savingsGoals] = await prisma.$transaction([
       prisma.transaction.findMany({ where: { userId } }),
       prisma.budgetLimit.findUnique({ where: { userId } }),
       prisma.savingsGoal.findMany({ where: { userId } }),
-    ]) as [Transaction[], BudgetLimit | null, SavingsGoal[]]; // Tipe eksplisit
+    ]) as [Transaction[], BudgetLimit | null, SavingsGoal[]]; 
 
-    // Format data agar mudah dibaca saat diekspor
     const backupData = {
       version: 1.0, 
       timestamp: new Date().toISOString(),
       user_id: userId,
-      // FIX 'any' TYPE: Menambahkan tipe eksplisit ke map callback
-      transactions: transactions.map((t: Transaction) => ({
+      transactions: transactions.map((t) => ({
         ...t,
         date: t.date.toISOString(),
         createdAt: t.createdAt.toISOString(),
@@ -41,8 +37,7 @@ export async function GET(request: Request) {
           createdAt: budgetLimit.createdAt.toISOString(),
           updatedAt: budgetLimit.updatedAt.toISOString(),
       } : null,
-      // FIX 'any' TYPE: Menambahkan tipe eksplisit ke map callback
-      savingsGoals: savingsGoals.map((g: SavingsGoal) => ({
+      savingsGoals: savingsGoals.map((g) => ({
         ...g,
         deadline: g.deadline ? g.deadline.toISOString() : null,
         createdAt: g.createdAt.toISOString(),
@@ -59,7 +54,7 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error('Backup GET API error:', error);
+    console.error('Backup Error:', error);
     return NextResponse.json({ message: 'Failed to create backup' }, { status: 500 });
   }
 }

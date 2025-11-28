@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,7 +96,7 @@ export default function TransactionsPage() {
   };
   
   return (
-    <ProtectedRoute>
+    
       <div className="min-h-screen bg-gray-50/50 pb-24 font-sans selection:bg-[#D2F65E]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           
@@ -283,6 +282,5 @@ export default function TransactionsPage() {
 
         </div>
       </div>
-    </ProtectedRoute>
   );
 }

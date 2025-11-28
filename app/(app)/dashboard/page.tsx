@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,13 +72,15 @@ export default function DashboardPage() {
   } = useFinance();
   const { toast } = useToast();
 
-  const today = new Date().toISOString().split('T')[0];
+  // MODIFIKASI: Gunakan tanggal lokal sistem user
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   // --- State ---
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
   const [budgetForm, setBudgetForm] = useState({
     totalBudget: budgetLimit?.totalBudget.toString() || '',
-    startDate: budgetLimit?.startDate || new Date().toISOString().split('T')[0],
+    startDate: budgetLimit?.startDate || today,
     endDate: budgetLimit?.endDate || '',
     isActive: budgetLimit?.isActive ?? true,
   });
@@ -87,6 +88,7 @@ export default function DashboardPage() {
   const [isTxnFormOpen, setIsTxnFormOpen] = useState(false);
   const [transactionForm, setTransactionForm] = useState<typeof initialTransactionForm>({
     ...initialTransactionForm,
+    date: today, // Default tanggal transaksi ke hari ini (lokal)
   });
 
   // --- Data Processing ---
@@ -114,7 +116,7 @@ export default function DashboardPage() {
   const handleTxnDialogChange = (open: boolean) => {
     setIsTxnFormOpen(open);
     if (!open) {
-      setTransactionForm({ ...initialTransactionForm });
+      setTransactionForm({ ...initialTransactionForm, date: today });
     }
   };
 
@@ -132,7 +134,7 @@ export default function DashboardPage() {
             date: transactionForm.date,
         });
         toast({ title: 'Success', description: 'Transaction added' });
-        setTransactionForm({ ...initialTransactionForm });
+        setTransactionForm({ ...initialTransactionForm, date: today });
         setIsTxnFormOpen(false);
     } catch(e) {
         toast({ title: 'Error', description: 'Failed to save.', variant: 'destructive' });
@@ -177,7 +179,6 @@ export default function DashboardPage() {
   };
 
   return (
-    <ProtectedRoute>
       <div className="min-h-screen bg-gray-50/50 pb-24 font-sans selection:bg-[#D2F65E]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           
@@ -494,6 +495,5 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
   );
 }

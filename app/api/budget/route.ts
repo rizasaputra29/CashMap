@@ -1,10 +1,8 @@
-// path: app/api/budget/route.ts
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getUserIdFromRequest } from '@/lib/auth';
 
-// GET: Read Budget Limit for the user
+// GET: Read Budget Limit
 export async function GET(request: Request) {
   const userId = getUserIdFromRequest(request); 
 
@@ -28,12 +26,12 @@ export async function GET(request: Request) {
     
     return NextResponse.json(null);
   } catch (error) {
-    console.error('Budget GET API error:', error);
+    console.error('Budget GET Error:', error);
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-// POST/PUT: Set atau Update Budget Limit
+// POST: Set/Update Budget
 export async function POST(request: Request) {
   const userId = getUserIdFromRequest(request); 
 
@@ -71,7 +69,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json(budgetData, { status: 201 });
   } catch (error) {
-    console.error('Budget POST/PUT API error:', error);
-    return NextResponse.json({ message: 'Failed to save budget limit' }, { status: 500 });
+    console.error('Budget POST Error:', error);
+    return NextResponse.json({ message: 'Failed to save budget' }, { status: 500 });
   }
 }

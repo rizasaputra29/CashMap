@@ -60,8 +60,15 @@ export default function LoginPage() {
   };
 
   // Animation Variants
+  // Green Panel: Starts from Right (100%), slides to Left (0)
   const slideVariant: Variants = {
     initial: { x: "100%" },
+    animate: { x: 0, transition: { type: "spring", stiffness: 100, damping: 20 } }
+  };
+
+  // Form Panel: Starts from Left (-100%), slides to Right (0) - Opposite direction
+  const formVariant: Variants = {
+    initial: { x: "-100%" },
     animate: { x: 0, transition: { type: "spring", stiffness: 100, damping: 20 } }
   };
 
@@ -108,7 +115,12 @@ export default function LoginPage() {
         </motion.div>
 
         {/* RIGHT SIDE: LOGIN FORM */}
-        <div className="p-8 md:p-16 flex flex-col justify-center h-full relative bg-[#D2F65E] lg:bg-white overflow-hidden">
+        <motion.div 
+            className="p-8 md:p-16 flex flex-col justify-center h-full relative bg-[#D2F65E] lg:bg-white overflow-hidden"
+            variants={formVariant}
+            initial="initial"
+            animate="animate"
+        >
           
           {/* Mobile Only: Background Decoration */}
           <div className="absolute top-0 right-0 w-full h-full pointer-events-none opacity-20 lg:hidden">
@@ -222,7 +234,7 @@ export default function LoginPage() {
               </p>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

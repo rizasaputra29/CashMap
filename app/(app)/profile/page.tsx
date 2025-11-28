@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -120,7 +119,6 @@ export default function ProfilePage() {
     .slice(0, 2) || 'US';
 
   return (
-    <ProtectedRoute>
       <div className="min-h-screen bg-gray-50/50 pb-24 font-sans selection:bg-[#D2F65E]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           
@@ -305,6 +303,5 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
   );
 }

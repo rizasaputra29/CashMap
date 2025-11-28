@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 
 // 3. Konfigurasi Metadata (Judul, Deskripsi, Ikon, Manifest)
 export const metadata: Metadata = {
-  title: 'CashMap - Financial Tracker',
+  title: 'CashMap',
   description: 'Track your income, expenses, and savings goals with CashMap',
   manifest: '/manifest.json',
   appleWebApp: {

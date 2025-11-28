@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'CashMap - Financial Tracker',
+    name: 'CashMap',
     short_name: 'CashMap',
     description: 'Track your income, expenses, and savings goals with CashMap',
     start_url: '/',

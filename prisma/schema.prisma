@@ -10,14 +10,14 @@ datasource db {
 }
 
 model User {
-  id          String         @id @default(cuid())
-  email       String         @unique
-  password    String         // Simpan HASHED PASSWORD di sini
-  fullName    String
-  avatarUrl   String?
+  id             String        @id @default(cuid())
+  email          String        @unique
+  password       String        // Simpan HASHED PASSWORD di sini
+  fullName       String
+  avatarUrl      String?
   securityAnswer String 
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   transactions Transaction[]
   budgetLimit  BudgetLimit[]

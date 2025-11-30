@@ -31,6 +31,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Note: savingsGoalId is ignored here as per your schema requirements
     const { type, amount, category, description, date } = await request.json();
 
     const newTransaction = await prisma.transaction.create({
@@ -98,9 +99,58 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ message: 'Transaction ID required' }, { status: 400 });
         }
 
-        await prisma.transaction.delete({
-            where: { id, userId }, 
+        // 1. Fetch transaction first to see if it's a Savings transaction
+        const transaction = await prisma.transaction.findUnique({
+            where: { id, userId },
         });
+
+        if (!transaction) {
+             return NextResponse.json({ message: 'Transaction not found' }, { status: 404 });
+        }
+
+        // 2. Perform delete and update goal (Workaround using Description matching)
+        await prisma.$transaction(async (tx) => {
+            // Check if this transaction looks like a savings contribution
+            if (transaction.category === 'Savings' && transaction.description) {
+                // Logic: Extract Goal Name from description format "Saved for [GoalName]"
+                // This matches the format used in app/(app)/savings/page.tsx
+                let goalName = null;
+                const savedForMatch = transaction.description.match(/^Saved for (.+)$/);
+                const initialMatch = transaction.description.match(/^Initial deposit for (.+)$/);
+
+                if (savedForMatch) {
+                    goalName = savedForMatch[1];
+                } else if (initialMatch) {
+                    goalName = initialMatch[1];
+                }
+
+                if (goalName) {
+                    // Try to find the goal by name
+                    const goal = await tx.savingsGoal.findFirst({
+                        where: { userId, name: goalName }
+                    });
+
+                    if (goal) {
+                        const newAmount = Math.max(0, goal.currentAmount - transaction.amount);
+                        const isCompleted = newAmount >= goal.targetAmount;
+
+                        await tx.savingsGoal.update({
+                            where: { id: goal.id },
+                            data: { 
+                                currentAmount: newAmount,
+                                isCompleted: isCompleted
+                            }
+                        });
+                    }
+                }
+            }
+
+            // Finally delete the transaction
+            await tx.transaction.delete({
+                where: { id, userId }, 
+            });
+        });
+
         return NextResponse.json({ message: 'Transaction deleted successfully' });
     } catch (error) {
         console.error('Transactions DELETE Error:', error);

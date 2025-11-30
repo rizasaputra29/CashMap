@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
-// Interface
 export interface Transaction {
   id: string;
   userId: string;
@@ -13,6 +12,7 @@ export interface Transaction {
   description: string;
   date: string;
   createdAt: string;
+  savingsGoalId?: string | null;
 }
 
 export interface BudgetLimit {
@@ -39,12 +39,13 @@ interface FinanceContextType {
   transactions: Transaction[];
   budgetLimit: BudgetLimit | null;
   savingsGoals: SavingsGoal[];
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  // FIXED: Updated signature to omit createdAt and return SavingsGoal | undefined
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'> & { savingsGoalId?: string }) => Promise<void>;
   updateTransaction: (id: string, updates: Partial<Omit<Transaction, 'id' | 'userId' | 'createdAt'>>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   setBudgetLimit: (budget: Omit<BudgetLimit, 'id' | 'userId'>) => Promise<void>;
   resetBudgetLimit: () => Promise<void>;
-  addSavingsGoal: (goal: Omit<SavingsGoal, 'id' | 'userId'>) => Promise<void>;
+  addSavingsGoal: (goal: Omit<SavingsGoal, 'id' | 'userId' | 'createdAt'>) => Promise<SavingsGoal | undefined>;
   updateSavingsGoal: (id: string, updates: Partial<SavingsGoal>) => Promise<void>;
   deleteSavingsGoal: (id: string) => Promise<void>;
   getDailyExpenses: (date: string) => number;
@@ -61,20 +62,10 @@ interface FinanceContextType {
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
-// Helper
 const getHeaders = (userId: string) => ({
     'X-User-Id': userId,
     'Content-Type': 'application/json',
 });
-
-// Helper untuk mendapatkan tanggal lokal 'YYYY-MM-DD' sesuai device user
-const getLocalToday = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
 
 const formatDate = (dateInput: Date | string): string => {
     const date = new Date(dateInput);
@@ -86,6 +77,14 @@ const numberToCleanString = (num: number): string => {
     if (!isFinite(num)) return '0';
     return num.toFixed(2).replace(/\.00$/, '');
 }
+
+const getLocalToday = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 const calculateDaysRemaining = (startDateStr: string, endDateStr: string): number => {
     const today = new Date(startDateStr);
@@ -99,7 +98,6 @@ const calculateDaysRemaining = (startDateStr: string, endDateStr: string): numbe
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays + 1;
 }
-
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -119,11 +117,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
             date: formatDate(t.date)
         }));
         setTransactions(formattedTransactions);
-      } else {
-         if (txnResponse.status !== 404) {
-             console.error('Failed to fetch transactions:', txnResponse.statusText);
-         }
       }
+      
       const budgetResponse = await fetch('/api/budget', { headers });
       if (budgetResponse.ok) {
           const budgetData: BudgetLimit | null = await budgetResponse.json();
@@ -137,6 +132,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
               setBudgetLimitState(null);
           }
       }
+
       const savingsResponse = await fetch('/api/savings', { headers });
       if (savingsResponse.ok) {
           const goalsData: SavingsGoal[] = await savingsResponse.json();
@@ -147,9 +143,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Error fetching finance data:', error);
-      setTransactions([]);
-      setBudgetLimitState(null);
-      setSavingsGoals([]);
     }
   };
 
@@ -163,7 +156,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isAuthLoading]);
 
-  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
+  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'> & { savingsGoalId?: string }) => {
     if (!user) return;
     const payload = { ...transaction, amount: numberToCleanString(transaction.amount) };
     const response = await fetch('/api/transactions', { method: 'POST', headers: getHeaders(user.id), body: JSON.stringify(payload) });
@@ -188,6 +181,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     const response = await fetch(`/api/transactions?id=${id}`, { method: 'DELETE', headers: getHeaders(user.id) });
     if (response.ok) {
         setTransactions((prev) => prev.filter((t) => t.id !== id));
+        const savingsResponse = await fetch('/api/savings', { headers: getHeaders(user.id) });
+        if (savingsResponse.ok) {
+            const goalsData: SavingsGoal[] = await savingsResponse.json();
+            setSavingsGoals(goalsData.map(g => ({
+                ...g,
+                deadline: g.deadline ? formatDate(g.deadline) : undefined,
+            })));
+        }
     } else { throw new Error('Failed to delete transaction.'); }
   };
 
@@ -210,13 +211,15 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     } else { throw new Error('Failed to reset budget limit.'); }
   };
 
+  // FIXED: Updated function signature to match interface and return the new goal
   const addSavingsGoal = async (goal: Omit<SavingsGoal, 'id' | 'userId' | 'createdAt'>) => {
-    if (!user) return;
+    if (!user) return undefined;
     const payload = { ...goal, targetAmount: numberToCleanString(goal.targetAmount), currentAmount: numberToCleanString(goal.currentAmount) };
     const response = await fetch('/api/savings', { method: 'POST', headers: getHeaders(user.id), body: JSON.stringify(payload) });
     if (response.ok) {
         const newGoal: SavingsGoal = await response.json();
         setSavingsGoals((prev) => [...prev, newGoal]);
+        return newGoal;
     } else { throw new Error('Failed to add savings goal.'); }
   };
 
@@ -279,7 +282,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  // --- Fungsi Budget Dinamis ---
   const getPeriodExpenses = useCallback((start: string, end: string): number => {
     return transactions.reduce((sum, t) => {
         if (t.type === 'expense' && t.date >= start && t.date <= end) {
@@ -291,21 +293,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const getAdjustedRemainingTotalBudget = useCallback((): number => {
     if (!budgetLimit || !budgetLimit.isActive) return 0;
-    
-    // PERUBAHAN: Gunakan getLocalToday()
     const todayStr = getLocalToday();
-    
-    const startDate = new Date(budgetLimit.startDate);
-    const yesterday = new Date(todayStr);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-    const effectiveEndDateForPastExpenses = yesterdayStr >= budgetLimit.startDate ? yesterdayStr : budgetLimit.startDate;
-    let pastExpenses = 0;
-    if (todayStr > budgetLimit.startDate) {
-        pastExpenses = getPeriodExpenses(budgetLimit.startDate, effectiveEndDateForPastExpenses);
-    }
-    const remaining = budgetLimit.totalBudget - pastExpenses;
-    return remaining;
+    const pastExpenses = getPeriodExpenses(budgetLimit.startDate, todayStr < budgetLimit.endDate ? todayStr : budgetLimit.endDate);
+    return budgetLimit.totalBudget - pastExpenses;
   }, [budgetLimit, getPeriodExpenses]);
 
   const getDailyExpenses = useCallback((date: string): number => {
@@ -320,24 +310,17 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       }
       const remainingTotalBudget = getAdjustedRemainingTotalBudget();
       const daysRemaining = calculateDaysRemaining(date, budgetLimit.endDate);
-      if (daysRemaining <= 0) {
-          return remainingTotalBudget > 0 ? remainingTotalBudget : 0;
-      }
-      const dynamicLimit = remainingTotalBudget / daysRemaining;
-      return dynamicLimit > 0 ? dynamicLimit : 0;
+      if (daysRemaining <= 0) return remainingTotalBudget > 0 ? remainingTotalBudget : 0;
+      return remainingTotalBudget > 0 ? remainingTotalBudget / daysRemaining : 0;
   }, [budgetLimit, getAdjustedRemainingTotalBudget]);
 
   const getRemainingDailyBudget = useCallback((date: string): number => {
     const dynamicLimit = getDynamicDailyLimit(date);
-    if (dynamicLimit === 0 && (!budgetLimit || !budgetLimit.isActive || date < budgetLimit.startDate || date > budgetLimit.endDate)) {
-        return 0;
-    }
+    if (dynamicLimit === 0 && (!budgetLimit || !budgetLimit.isActive)) return 0;
     const dailyExpenses = getDailyExpenses(date);
-    const remaining = dynamicLimit - dailyExpenses;
-    return remaining;
+    return dynamicLimit - dailyExpenses;
   }, [budgetLimit, getDailyExpenses, getDynamicDailyLimit]);
 
-  
   const getTransactionById = useCallback((id: string): Transaction | undefined => {
     return transactions.find(t => t.id === id);
   }, [transactions]);
@@ -345,7 +328,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const getGoalById = useCallback((id: string): SavingsGoal | undefined => {
     return savingsGoals.find(g => g.id === id);
   }, [savingsGoals]);
-  
 
   return (
     <FinanceContext.Provider

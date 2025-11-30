@@ -38,7 +38,8 @@ export default function TransactionsPage() {
   });
   
   const incomeCategories = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'];
-  const expenseCategories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other'];
+  // 'Savings' category added here
+  const expenseCategories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Savings', 'Other'];
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const cleanedValue = cleanRupiah(e.target.value);
@@ -96,7 +97,6 @@ export default function TransactionsPage() {
   };
   
   return (
-    
       <div className="min-h-screen bg-gray-50/50 pb-24 font-sans selection:bg-[#D2F65E]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           
@@ -176,7 +176,7 @@ export default function TransactionsPage() {
               </Dialog>
           </div>
 
-          {/* Filter Section (Updated Design) */}
+          {/* Filter Section */}
           <div className="mb-8 bg-[#D2F65E] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-[2rem] p-6 md:p-8 relative overflow-hidden">
               <div className="flex flex-col md:flex-row items-end gap-6 relative z-10">
                 <div className="flex items-center gap-3 w-full md:w-auto mb-2 md:mb-0">
@@ -217,7 +217,6 @@ export default function TransactionsPage() {
                 )}
               </div>
               
-              {/* Decoration */}
               <div className="absolute -right-6 -bottom-10 opacity-10">
                  <Filter className="w-40 h-40" />
               </div>

@@ -33,7 +33,8 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const incomeCategories = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'];
-const expenseCategories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other'];
+// 'Savings' category added here for consistency
+const expenseCategories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Savings', 'Other'];
 
 export default function TransactionDetailPage() {
   const { getTransactionById, updateTransaction, deleteTransaction } = useFinance();
@@ -123,7 +124,6 @@ export default function TransactionDetailPage() {
   }
 
   return (
-    
       <div className="min-h-screen bg-gray-50/50 pb-24 font-sans selection:bg-[#D2F65E]">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           

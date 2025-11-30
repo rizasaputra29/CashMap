@@ -5,9 +5,9 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SimpleProgress } from '@/components/SimpleProgress';
+import { InstallPrompt } from '@/components/InstallPrompt';
 import { 
   Wallet, 
-  TrendingUp,  
   Target, 
   Plus, 
   Calendar, 
@@ -15,7 +15,10 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   CreditCard,
-  ArrowRight
+  ArrowRight,
+  ChevronLeft, 
+  ChevronRight,
+  TrendingUp
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatRupiah, cleanRupiah } from '@/lib/utils';
@@ -24,17 +27,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { format, subMonths, addMonths, isSameMonth } from 'date-fns';
 
-// --- Helpers ---
 const calculateDaysDifference = (start: string, end: string): number => {
     const startDate = new Date(start);
     const endDate = new Date(end);
@@ -46,7 +45,8 @@ const calculateDaysDifference = (start: string, end: string): number => {
 }
 
 const incomeCategories = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'];
-const expenseCategories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other'];
+// 'Savings' category added here for dashboard as well
+const expenseCategories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Savings', 'Other'];
 
 const initialTransactionForm = {
   id: '',
@@ -72,11 +72,11 @@ export default function DashboardPage() {
   } = useFinance();
   const { toast } = useToast();
 
-  // MODIFIKASI: Gunakan tanggal lokal sistem user
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   // --- State ---
+  const [selectedMonth, setSelectedMonth] = useState(new Date()); 
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
   const [budgetForm, setBudgetForm] = useState({
     totalBudget: budgetLimit?.totalBudget.toString() || '',
@@ -88,14 +88,25 @@ export default function DashboardPage() {
   const [isTxnFormOpen, setIsTxnFormOpen] = useState(false);
   const [transactionForm, setTransactionForm] = useState<typeof initialTransactionForm>({
     ...initialTransactionForm,
-    date: today, // Default tanggal transaksi ke hari ini (lokal)
+    date: today,
   });
 
   // --- Data Processing ---
-  const totalIncome = useMemo(() => transactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0), [transactions]);
-  const totalExpenses = useMemo(() => transactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0), [transactions]);
-  const balance = totalIncome - totalExpenses;
   
+  // 1. All-time Balance (Total Wallet)
+  const totalWalletIncome = useMemo(() => transactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0), [transactions]);
+  const totalWalletExpenses = useMemo(() => transactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0), [transactions]);
+  const walletBalance = totalWalletIncome - totalWalletExpenses;
+
+  // 2. Monthly Filtered Data (For Income & Expense Cards)
+  const monthlyTransactions = useMemo(() => {
+    return transactions.filter(t => isSameMonth(new Date(t.date), selectedMonth));
+  }, [transactions, selectedMonth]);
+
+  const monthlyIncome = useMemo(() => monthlyTransactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0), [monthlyTransactions]);
+  const monthlyExpenses = useMemo(() => monthlyTransactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0), [monthlyTransactions]);
+
+  // 3. Daily Budget Data
   const todayExpenses = getDailyExpenses(today);
   const remainingDailyBudget = getRemainingDailyBudget(today);
   const dynamicDailyLimitForToday = getDynamicDailyLimit(today);
@@ -105,6 +116,7 @@ export default function DashboardPage() {
   const dailyBudgetExceeded = isBudgetActiveToday && todayExpenses > dynamicDailyLimitForToday && dynamicDailyLimitForToday > 0;
   const dailyProgressPercentage = dynamicDailyLimitForToday > 0 ? (todayExpenses / dynamicDailyLimitForToday) * 100 : (todayExpenses > 0 ? 100 : 0);
   
+  // 4. Active Savings Goals
   const activeSavingsGoals = savingsGoals.filter(g => !g.isCompleted);
 
   // --- Handlers ---
@@ -178,75 +190,83 @@ export default function DashboardPage() {
     }
   };
 
+  // Month Navigation
+  const prevMonth = () => setSelectedMonth(subMonths(selectedMonth, 1));
+  const nextMonth = () => setSelectedMonth(addMonths(selectedMonth, 1));
+
   return (
       <div className="min-h-screen bg-gray-50/50 pb-24 font-sans selection:bg-[#D2F65E]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           
           {/* --- Header Section --- */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
             <div>
               <h1 className="text-3xl md:text-4xl font-black tracking-tight">Dashboard</h1>
               <p className="text-sm text-gray-500 font-medium mt-1">Financial overview</p>
             </div>
             
-            <Dialog open={isTxnFormOpen} onOpenChange={handleTxnDialogChange}>
-              <DialogTrigger asChild>
-                <Button className="h-12 rounded-full bg-black text-white font-bold hover:scale-105 transition-transform shadow-md px-6">
-                  <Plus className="w-5 h-5 mr-1" /> <span className="hidden sm:inline">New Transaction</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-3xl sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="text-xl font-bold">Add Transaction</DialogTitle>
-                  <DialogDescription>Record a new income or expense.</DialogDescription>
-                </DialogHeader>
-                <Tabs value={transactionForm.type} onValueChange={(v) => setTransactionForm({ ...transactionForm, type: v as 'income'|'expense' })}>
-                  <TabsList className="grid w-full grid-cols-2 border-2 border-black rounded-xl p-1 h-auto bg-white">
-                    <TabsTrigger value="expense" className="rounded-lg data-[state=active]:bg-black data-[state=active]:text-white font-bold py-2">Expense</TabsTrigger>
-                    <TabsTrigger value="income" className="rounded-lg data-[state=active]:bg-[#D2F65E] data-[state=active]:text-black font-bold py-2">Income</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value={transactionForm.type} className="space-y-4 mt-6">
-                    <div className="space-y-2">
-                      <Label className="font-bold">Amount</Label>
-                      <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">Rp</span>
-                          <Input
-                            type="text" 
-                            placeholder="0"
-                            value={formatRupiah(parseFloat(transactionForm.amount || '0')).replace('Rp', '').trim()}
-                            onChange={handleAmountChange}
-                            className="h-12 border-2 border-black rounded-xl pl-10 text-right text-lg font-bold" 
-                          />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="font-bold">Category</Label>
-                      <Select value={transactionForm.category} onValueChange={(v) => setTransactionForm({ ...transactionForm, category: v })}>
-                        <SelectTrigger className="h-12 border-2 border-black rounded-xl font-medium">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent className="border-2 border-black rounded-xl">
-                          {(transactionForm.type === 'expense' ? expenseCategories : incomeCategories).map((cat) => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="font-bold">Date</Label>
-                        <Input type="date" value={transactionForm.date} onChange={(e) => setTransactionForm({...transactionForm, date: e.target.value})} className="h-12 border-2 border-black rounded-xl" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="font-bold">Description</Label>
-                        <Textarea placeholder="Notes..." value={transactionForm.description} onChange={(e) => setTransactionForm({...transactionForm, description: e.target.value})} className="border-2 border-black rounded-xl min-h-[80px]" />
-                    </div>
-                  </TabsContent>
-                </Tabs>
-                <Button onClick={handleSaveTransaction} className="w-full h-12 rounded-full bg-black text-white font-bold border-2 border-black hover:bg-gray-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] transition-all">
-                  Save Transaction
-                </Button>
-              </DialogContent>
-            </Dialog>
+            <div className="flex gap-2">
+                <InstallPrompt /> {/* PWA Install Button */}
+                
+                <Dialog open={isTxnFormOpen} onOpenChange={handleTxnDialogChange}>
+                <DialogTrigger asChild>
+                    <Button className="h-10 rounded-full bg-black text-white font-bold hover:scale-105 transition-transform shadow-md px-6">
+                    <Plus className="w-5 h-5 mr-1" /> <span className="hidden sm:inline">Add</span>
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-3xl sm:max-w-md">
+                    <DialogHeader>
+                    <DialogTitle className="text-xl font-bold">Add Transaction</DialogTitle>
+                    <DialogDescription>Record a new income or expense.</DialogDescription>
+                    </DialogHeader>
+                    <Tabs value={transactionForm.type} onValueChange={(v) => setTransactionForm({ ...transactionForm, type: v as 'income'|'expense' })}>
+                    <TabsList className="grid w-full grid-cols-2 border-2 border-black rounded-xl p-1 h-auto bg-white">
+                        <TabsTrigger value="expense" className="rounded-lg data-[state=active]:bg-black data-[state=active]:text-white font-bold py-2">Expense</TabsTrigger>
+                        <TabsTrigger value="income" className="rounded-lg data-[state=active]:bg-[#D2F65E] data-[state=active]:text-black font-bold py-2">Income</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value={transactionForm.type} className="space-y-4 mt-6">
+                        <div className="space-y-2">
+                        <Label className="font-bold">Amount</Label>
+                        <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">Rp</span>
+                            <Input
+                                type="text" 
+                                placeholder="0"
+                                value={formatRupiah(parseFloat(transactionForm.amount || '0')).replace('Rp', '').trim()}
+                                onChange={handleAmountChange}
+                                className="h-12 border-2 border-black rounded-xl pl-10 text-right text-lg font-bold" 
+                            />
+                        </div>
+                        </div>
+                        <div className="space-y-2">
+                        <Label className="font-bold">Category</Label>
+                        <Select value={transactionForm.category} onValueChange={(v) => setTransactionForm({ ...transactionForm, category: v })}>
+                            <SelectTrigger className="h-12 border-2 border-black rounded-xl font-medium">
+                            <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent className="border-2 border-black rounded-xl">
+                            {(transactionForm.type === 'expense' ? expenseCategories : incomeCategories).map((cat) => (
+                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="font-bold">Date</Label>
+                            <Input type="date" value={transactionForm.date} onChange={(e) => setTransactionForm({...transactionForm, date: e.target.value})} className="h-12 border-2 border-black rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="font-bold">Description</Label>
+                            <Textarea placeholder="Notes..." value={transactionForm.description} onChange={(e) => setTransactionForm({...transactionForm, description: e.target.value})} className="border-2 border-black rounded-xl min-h-[80px]" />
+                        </div>
+                    </TabsContent>
+                    </Tabs>
+                    <Button onClick={handleSaveTransaction} className="w-full h-12 rounded-full bg-black text-white font-bold border-2 border-black hover:bg-gray-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] transition-all">
+                    Save Transaction
+                    </Button>
+                </DialogContent>
+                </Dialog>
+            </div>
           </div>
 
           {/* --- Alert for Budget --- */}
@@ -260,19 +280,33 @@ export default function DashboardPage() {
             </Alert>
           )}
 
+          {/* --- Month Selector --- */}
+          <div className="flex items-center justify-between bg-white border-2 border-black rounded-[1.5rem] p-2 mb-6 shadow-sm max-w-xs md:max-w-md mx-auto">
+             <Button variant="ghost" size="icon" onClick={prevMonth} className="hover:bg-gray-100 rounded-full h-10 w-10">
+                <ChevronLeft className="h-5 w-5" />
+             </Button>
+             <div className="flex flex-col items-center">
+                <span className="text-sm font-bold uppercase tracking-widest text-gray-400">Period</span>
+                <span className="text-lg font-black">{format(selectedMonth, 'MMMM yyyy')}</span>
+             </div>
+             <Button variant="ghost" size="icon" onClick={nextMonth} className="hover:bg-gray-100 rounded-full h-10 w-10">
+                <ChevronRight className="h-5 w-5" />
+             </Button>
+          </div>
+
           {/* --- BENTO GRID LAYOUT --- */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-[minmax(160px,auto)]">
             
-            {/* 1. Total Balance (Wide) */}
+            {/* 1. Total Balance (Wide) - Showing All-Time Balance */}
             <Card className="col-span-1 md:col-span-2 lg:col-span-2 bg-[#D2F65E] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-[2rem] relative overflow-hidden flex flex-col justify-between">
               <CardContent className="p-8 relative z-10 flex flex-col justify-between h-full">
                 <div className="flex justify-between items-start">
-                    <p className="text-xs font-black uppercase tracking-widest text-black/60">Total Balance</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-black/60">Current Balance</p>
                     <Wallet className="w-6 h-6 opacity-50" />
                 </div>
                 <div>
-                    <h2 className="text-4xl md:text-6xl font-black text-black tracking-tighter">{formatRupiah(balance)}</h2>
-                    <p className="text-sm font-bold mt-2 opacity-60">Available funds</p>
+                    <h2 className="text-4xl md:text-6xl font-black text-black tracking-tighter">{formatRupiah(walletBalance)}</h2>
+                    <p className="text-sm font-bold mt-2 opacity-60">Total available funds</p>
                 </div>
               </CardContent>
               {/* Decoration */}
@@ -281,38 +315,44 @@ export default function DashboardPage() {
               </div>
             </Card>
 
-            {/* 2. Income (Square) */}
+            {/* 2. Monthly Income (Filtered) */}
             <Card className="col-span-1 bg-white border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-[2rem] hover:-translate-y-1 transition-transform duration-300">
               <CardContent className="p-6 flex flex-col justify-center h-full">
                 <div className="flex items-center justify-start space-x-4 mb-4">
                     <div className="bg-green-100 p-2 rounded-xl border-2 border-green-100">
                         <ArrowUpRight className="w-5 h-5 text-green-700" />
                     </div>
-                    <p className="text-md font-black uppercase text-gray-400 tracking-wider">Income</p>
+                    <div className="flex flex-col">
+                        <p className="text-xs font-black uppercase text-gray-400 tracking-wider">Income</p>
+                        <p className="text-[10px] font-bold text-gray-300">{format(selectedMonth, 'MMM yyyy')}</p>
+                    </div>
                 </div>
-                <p className="text-2xl md:text-3xl font-black text-black">{formatRupiah(totalIncome)}</p>
+                <p className="text-2xl md:text-3xl font-black text-black">{formatRupiah(monthlyIncome)}</p>
               </CardContent>
             </Card>
 
-            {/* 3. Expenses (Square) */}
+            {/* 3. Monthly Expenses (Filtered) */}
             <Card className="col-span-1 bg-white border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-[2rem] hover:-translate-y-1 transition-transform duration-300">
                <CardContent className="p-6 flex flex-col justify-center h-full">
                 <div className="flex items-center justify-start space-x-4 mb-4">
                     <div className="bg-red-100 p-2 rounded-xl border-2 border-red-100">
                         <ArrowDownRight className="w-5 h-5 text-red-700" />
                     </div>
-                    <p className="text-md font-black uppercase text-gray-400 tracking-wider">Expenses</p>
+                    <div className="flex flex-col">
+                        <p className="text-xs font-black uppercase text-gray-400 tracking-wider">Expenses</p>
+                        <p className="text-[10px] font-bold text-gray-300">{format(selectedMonth, 'MMM yyyy')}</p>
+                    </div>
                 </div>
-                <p className="text-2xl md:text-3xl font-black text-black">{formatRupiah(totalExpenses)}</p>
+                <p className="text-2xl md:text-3xl font-black text-black">{formatRupiah(monthlyExpenses)}</p>
               </CardContent>
             </Card>
 
-            {/* 4. Daily Budget (Tall/Square-ish - 2x2 on desktop) - UPDATED DESIGN */}
+            {/* 4. Daily Budget */}
             <Card className="col-span-1 md:col-span-2 lg:col-span-2 lg:row-span-2 bg-white border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-[2rem] overflow-hidden flex flex-col">
                  <CardHeader className="border-b-2 border-gray-100 bg-gray-50/50 px-8 py-6 flex flex-row items-center justify-between shrink-0">
                     <div className="space-y-1">
                         <CardTitle className="text-xl font-black">Daily Budget</CardTitle>
-                        <p className="text-sm text-gray-500 font-medium">Monitor your daily spending limit</p>
+                        <p className="text-sm text-gray-500 font-medium">Safe spending for today</p>
                     </div>
                     <div className="flex gap-2">
                         {budgetLimit ? (
@@ -370,7 +410,7 @@ export default function DashboardPage() {
                                 <Calendar className="w-8 h-8 text-gray-400" />
                             </div>
                             <h3 className="text-xl font-bold mb-2">No Active Budget</h3>
-                            <p className="text-gray-500 mb-6 max-w-xs mx-auto">Set a budget to track your daily spending limits and save more.</p>
+                            <p className="text-gray-500 mb-6 max-w-xs mx-auto">Set a budget to track your daily spending limits.</p>
                             {!budgetLimit && (
                                 <Button onClick={() => setIsBudgetOpen(true)} className="rounded-full bg-black text-white font-bold px-6">
                                     Create Budget
@@ -381,55 +421,7 @@ export default function DashboardPage() {
                  </CardContent>
             </Card>
 
-            {/* 5. Recent Transactions List (Tall) */}
-            <Card className="col-span-1 md:col-span-1 lg:col-span-1 lg:row-span-2 bg-white border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-[2rem] flex flex-col">
-                <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-100 flex flex-row items-center justify-between space-y-0 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-black" />
-                    <CardTitle className="text-lg font-black">Recent</CardTitle>
-                  </div>
-                     <Link href="/transactions" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                        <ArrowRight className="w-5 h-5 text-black" />
-                     </Link>
-                </CardHeader>
-                <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
-                    {transactions.length === 0 ? (
-                         <div className="flex-1 flex flex-col items-center justify-center text-gray-400 min-h-[200px] p-6 text-center">
-                            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
-                                <CreditCard className="w-6 h-6 opacity-40" />
-                            </div>
-                            <p className="text-xs font-medium">No transactions yet</p>
-                        </div>
-                    ) : (
-                        <div className="flex-1 overflow-y-auto">
-                             {/* Show only top 5 newest */}
-                             {transactions.slice(0, 5).map((t) => (
-                                 <div key={t.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
-                                      <div className="flex items-center gap-3 overflow-hidden">
-                                          <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center border-2 border-black ${t.type === 'income' ? 'bg-[#D2F65E]' : 'bg-white'}`}>
-                                              {t.type === 'income' ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
-                                          </div>
-                                          <div className="min-w-0">
-                                              <p className="font-bold text-sm truncate">{t.category}</p>
-                                              <p className="text-[10px] font-medium text-gray-500 uppercase">{new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                                          </div>
-                                      </div>
-                                      <span className={`font-black text-sm whitespace-nowrap ${t.type === 'income' ? 'text-green-600' : 'text-black'}`}>
-                                          {t.type === 'income' ? '+' : '-'}{formatRupiah(t.amount).replace('Rp', '')}
-                                      </span>
-                                 </div>
-                             ))}
-                        </div>
-                    )}
-                </CardContent>
-                <div className="p-4 border-t border-gray-100 shrink-0">
-                    <Button variant="outline" className="w-full h-10 rounded-xl border-2 border-dashed border-gray-300 text-gray-400 hover:border-black hover:text-black hover:bg-white font-bold text-xs uppercase tracking-wide" onClick={() => setIsTxnFormOpen(true)}>
-                        <Plus className="w-3 h-3 mr-2" /> Quick Add
-                    </Button>
-                </div>
-            </Card>
-
-            {/* 6. Savings Goals List (Tall) - UPDATED DESIGN: White Theme */}
+            {/* 5. Savings Goals List (Tall) */}
              <Card className="col-span-1 md:col-span-1 lg:col-span-1 lg:row-span-2 bg-white text-black border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-[2rem] flex flex-col">
                <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-100 flex flex-row items-center justify-between space-y-0 shrink-0">
                   <div className="flex items-center gap-2">
@@ -472,7 +464,55 @@ export default function DashboardPage() {
                </div>
             </Card>
 
-            {/* Dialogs for Budget are handled by state at the top */}
+            {/* 6. Recent Transactions List (Tall) */}
+            <Card className="col-span-1 md:col-span-1 lg:col-span-1 lg:row-span-2 bg-white border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-[2rem] flex flex-col">
+                <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-100 flex flex-row items-center justify-between space-y-0 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-black" />
+                    <CardTitle className="text-lg font-black">Recent</CardTitle>
+                  </div>
+                     <Link href="/transactions" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <ArrowRight className="w-5 h-5 text-black" />
+                     </Link>
+                </CardHeader>
+                <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
+                    {transactions.length === 0 ? (
+                         <div className="flex-1 flex flex-col items-center justify-center text-gray-400 min-h-[200px] p-6 text-center">
+                            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                                <CreditCard className="w-6 h-6 opacity-40" />
+                            </div>
+                            <p className="text-xs font-medium">No transactions yet</p>
+                        </div>
+                    ) : (
+                        <div className="flex-1 overflow-y-auto">
+                             {/* Show only top 5 newest */}
+                             {transactions.slice(0, 5).map((t) => (
+                                 <div key={t.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
+                                      <div className="flex items-center gap-3 overflow-hidden">
+                                          <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center border-2 border-black ${t.type === 'income' ? 'bg-[#D2F65E]' : 'bg-white'}`}>
+                                              {t.type === 'income' ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
+                                          </div>
+                                          <div className="min-w-0">
+                                              <p className="font-bold text-sm truncate">{t.category}</p>
+                                              <p className="text-[10px] font-medium text-gray-500 uppercase">{new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                                          </div>
+                                      </div>
+                                      <span className={`font-black text-sm whitespace-nowrap ${t.type === 'income' ? 'text-green-600' : 'text-black'}`}>
+                                          {t.type === 'income' ? '+' : '-'} {formatRupiah(t.amount).replace('Rp', 'Rp ')}
+                                      </span>
+                                 </div>
+                             ))}
+                        </div>
+                    )}
+                </CardContent>
+                <div className="p-4 border-t border-gray-100 shrink-0">
+                    <Button variant="outline" className="w-full h-10 rounded-xl border-2 border-dashed border-gray-300 text-gray-400 hover:border-black hover:text-black hover:bg-white font-bold text-xs uppercase tracking-wide" onClick={() => setIsTxnFormOpen(true)}>
+                        <Plus className="w-3 h-3 mr-2" /> Quick Add
+                    </Button>
+                </div>
+            </Card>
+
+            {/* Dialogs for Budget */}
             {isBudgetOpen && (
                  <Dialog open={isBudgetOpen} onOpenChange={setIsBudgetOpen}>
                  <DialogContent className="border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-3xl">

@@ -7,21 +7,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SimpleProgress } from '@/components/SimpleProgress';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Target, Check, Edit, X, CheckCircle2, ArrowLeft, Save, Wallet, Calendar } from 'lucide-react';
+import { Plus, Trash2, Target, Check, Edit, X, CheckCircle2 } from 'lucide-react';
 import { formatRupiah, cleanRupiah } from '@/lib/utils';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation'; 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
 export default function SavingsPage() {
-  const { savingsGoals, updateSavingsGoal, deleteSavingsGoal, addSavingsGoal } = useFinance();
+  const { savingsGoals, updateSavingsGoal, deleteSavingsGoal, addSavingsGoal, addTransaction } = useFinance();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [addAmountGoalId, setAddAmountGoalId] = useState<string | null>(null);
   const [addAmountValue, setAddAmountValue] = useState('');
   const [isNewGoalOpen, setIsNewGoalOpen] = useState(false);
 
-  // New Goal Form
   const [newGoalForm, setNewGoalForm] = useState({
     name: '',
     targetAmount: '',
@@ -29,9 +29,7 @@ export default function SavingsPage() {
     deadline: '',
   });
 
-  // --- Handlers ---
   const handleAddAmountValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Allow empty string for better typing experience
     const raw = e.target.value;
     if (raw === '') {
         setAddAmountValue('');
@@ -52,8 +50,20 @@ export default function SavingsPage() {
     const isCompleted = newAmount >= goal.targetAmount;
     
     try {
+        // 1. Update Savings Goal
         await updateSavingsGoal(goalId, { currentAmount: newAmount, isCompleted });
-        toast({ title: 'Success', description: isCompleted ? 'Goal completed! 🎉' : `Added ${formatRupiah(addedAmount)}` });
+
+        // 2. Create Linked Transaction
+        await addTransaction({
+            type: 'expense',
+            amount: addedAmount,
+            category: 'Savings',
+            description: `Saved for ${goal.name}`,
+            date: new Date().toISOString().split('T')[0],
+            savingsGoalId: goal.id,
+        });
+
+        toast({ title: 'Success', description: isCompleted ? 'Goal completed! 🎉' : `Added ${formatRupiah(addedAmount)} to savings.` });
         setAddAmountValue('');
         setAddAmountGoalId(null);
     } catch (e) {
@@ -63,7 +73,6 @@ export default function SavingsPage() {
 
   const handleDeleteGoal = async (e: React.MouseEvent, goalId: string) => {
     e.stopPropagation();
-    e.preventDefault();
     try {
         await deleteSavingsGoal(goalId);
         toast({ title: 'Deleted', description: 'Savings goal removed.' });
@@ -74,7 +83,6 @@ export default function SavingsPage() {
 
   const handleMarkComplete = async (e: React.MouseEvent, goalId: string) => {
     e.stopPropagation();
-    e.preventDefault();
     try {
         await updateSavingsGoal(goalId, { isCompleted: true });
         toast({ title: 'Completed', description: 'Goal marked as done!' });
@@ -89,13 +97,29 @@ export default function SavingsPage() {
         return;
       }
       try {
-        await addSavingsGoal({
+        const startAmount = parseFloat(newGoalForm.currentAmount || '0');
+        
+        // Updated: addSavingsGoal now returns the goal object
+        const newGoal = await addSavingsGoal({
             name: newGoalForm.name,
             targetAmount: parseFloat(newGoalForm.targetAmount),
-            currentAmount: parseFloat(newGoalForm.currentAmount || '0'),
+            currentAmount: startAmount,
             deadline: newGoalForm.deadline || undefined,
             isCompleted: false,
         });
+
+        // If initial balance > 0 and newGoal is valid, create linked transaction
+        if (startAmount > 0 && newGoal) {
+             await addTransaction({
+                type: 'expense',
+                amount: startAmount,
+                category: 'Savings',
+                description: `Initial deposit for ${newGoalForm.name}`,
+                date: new Date().toISOString().split('T')[0],
+                savingsGoalId: newGoal.id,
+            });
+        }
+
         toast({ title: 'Success', description: 'New goal created' });
         setNewGoalForm({ name: '', targetAmount: '', currentAmount: '', deadline: '' });
         setIsNewGoalOpen(false);
@@ -104,7 +128,6 @@ export default function SavingsPage() {
       }
   };
 
-  // Helper to format the input display safely
   const getDisplayAmount = (val: string) => {
     if (!val) return '';
     const num = parseFloat(val);
@@ -118,7 +141,6 @@ export default function SavingsPage() {
   return (
       <div className="min-h-screen bg-gray-50/50 pb-24 font-sans selection:bg-[#D2F65E]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          
            {/* Header */}
            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
             <div>
@@ -177,23 +199,19 @@ export default function SavingsPage() {
                     const progress = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
                     
                     return (
-                      <Link href={`/savings/${goal.id}`} key={goal.id} className="block group h-full">
-                        <Card className="border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-[2rem] hover:-translate-y-1 transition-all duration-300 h-full flex flex-col bg-white overflow-hidden">
+                        <Card key={goal.id} 
+                              className="border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-[2rem] hover:-translate-y-1 transition-all duration-300 h-full flex flex-col bg-white overflow-hidden cursor-pointer group"
+                              onClick={() => router.push(`/savings/${goal.id}`)}
+                        >
                             <CardHeader className="px-6 pt-6 pb-2">
                                 <div className="flex justify-between items-start">
                                     <div className="bg-black p-2 rounded-xl text-white">
                                         <Target className="w-6 h-6" />
                                     </div>
-                                    <div className="flex gap-2">
-                                         {/* Edit */}
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-yellow-100 text-gray-400 hover:text-yellow-700">
-                                            <Edit className="w-4 h-4" />
-                                        </Button>
-                                        {/* Complete */}
+                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Button variant="ghost" size="icon" onClick={(e) => handleMarkComplete(e, goal.id)} className="h-8 w-8 rounded-full hover:bg-green-100 text-gray-400 hover:text-green-700">
                                             <Check className="w-4 h-4" />
                                         </Button>
-                                        {/* Delete */}
                                         <Button variant="ghost" size="icon" onClick={(e) => handleDeleteGoal(e, goal.id)} className="h-8 w-8 rounded-full hover:bg-red-100 text-gray-400 hover:text-red-600">
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
@@ -225,13 +243,10 @@ export default function SavingsPage() {
                                     </div>
                                 </div>
 
-                                {/* Quick Add Amount */}
+                                {/* Quick Add Amount - Isolated from Card Click */}
                                 <div 
                                     className="mt-6 pt-4 border-t border-dashed border-gray-200" 
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                    }}
+                                    onClick={(e) => e.stopPropagation()} 
                                 >
                                     {addAmountGoalId === goal.id ? (
                                         <div className="flex gap-2 animate-in fade-in zoom-in-95 duration-200">
@@ -243,7 +258,6 @@ export default function SavingsPage() {
                                                     className="h-10 pl-8 pr-2 border-2 border-black rounded-xl text-sm font-bold"
                                                     value={getDisplayAmount(addAmountValue)}
                                                     onChange={handleAddAmountValueChange}
-                                                    onClick={(e) => e.stopPropagation()}
                                                     onKeyDown={(e) => {
                                                         if (e.key === 'Enter') handleAddAmount(goal.id);
                                                     }}
@@ -266,11 +280,7 @@ export default function SavingsPage() {
                                         </div>
                                     ) : (
                                         <Button 
-                                            onClick={(e) => { 
-                                                e.preventDefault(); 
-                                                e.stopPropagation(); 
-                                                setAddAmountGoalId(goal.id); 
-                                            }} 
+                                            onClick={() => setAddAmountGoalId(goal.id)} 
                                             variant="outline" 
                                             className="w-full rounded-xl border-2 border-black hover:bg-black hover:text-white font-bold transition-colors"
                                         >
@@ -280,7 +290,6 @@ export default function SavingsPage() {
                                 </div>
                             </CardContent>
                         </Card>
-                      </Link>
                     );
                   })}
               </div>
@@ -316,7 +325,6 @@ export default function SavingsPage() {
                                         </Button>
                                     </div>
                                 </div>
-                                {/* Decoration */}
                                 <div className="absolute -right-6 -bottom-6 opacity-10">
                                     <Target className="w-32 h-32 text-green-800" />
                                 </div>
@@ -326,8 +334,8 @@ export default function SavingsPage() {
                 </div>
             )}
 
-            {/* EMPTY STATE */}
-            {savingsGoals.length === 0 && (
+             {/* EMPTY STATE */}
+             {savingsGoals.length === 0 && (
                 <div className="bg-white border-2 border-dashed border-gray-300 rounded-[2.5rem] p-16 text-center flex flex-col items-center justify-center min-h-[400px]">
                     <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6 border-4 border-white shadow-sm">
                         <Target className="w-10 h-10 text-gray-300" />

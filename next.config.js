@@ -6,15 +6,14 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   disable: false, 
-  importScripts: ['/custom-sw.js'], // Pastikan file ini ada di folder public!
+  importScripts: ['/custom-sw.js'],
   runtimeCaching: [
-    // ... caching rules Anda
     ...runtimeCaching,
   ],
 });
 
 const nextConfig = {
-  // Hapus blok eslint: { ... }
+  reactStrictMode: false,
   images: { 
     unoptimized: false, 
     remotePatterns: [

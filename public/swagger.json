@@ -1,0 +1,473 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "CashMap API",
+      "version": "1.0.0",
+      "description": "API documentation for CashMap Financial Tracker"
+    },
+    "paths": {
+      "/api/auth/register": {
+        "post": {
+          "tags": ["Auth"],
+          "summary": "Register a new user",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["email", "password", "fullName", "securityAnswer"],
+                  "properties": {
+                    "email": { "type": "string", "format": "email" },
+                    "password": { "type": "string", "format": "password" },
+                    "fullName": { "type": "string" },
+                    "securityAnswer": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": { 
+              "description": "User created successfully",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/User" }
+                }
+              }
+            },
+            "400": { "description": "Missing required fields" },
+            "409": { "description": "Email already exists" }
+          }
+        }
+      },
+      "/api/auth/login": {
+        "post": {
+          "tags": ["Auth"],
+          "summary": "Login user",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["email", "password"],
+                  "properties": {
+                    "email": { "type": "string", "format": "email" },
+                    "password": { "type": "string", "format": "password" }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Login successful",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/User" }
+                }
+              }
+            },
+            "401": { "description": "Invalid credentials" }
+          }
+        }
+      },
+      "/api/auth/profile": {
+        "get": {
+          "tags": ["Auth"],
+          "summary": "Get user profile",
+          "responses": {
+            "200": { 
+              "description": "User profile data",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/User" }
+                }
+              }
+            },
+            "401": { "description": "Unauthorized" }
+          }
+        },
+        "put": {
+          "tags": ["Auth"],
+          "summary": "Update user profile",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fullName": { "type": "string" },
+                    "avatarUrl": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": { 
+              "description": "Profile updated",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/User" }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": ["Auth"],
+          "summary": "Reset Password",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["email", "securityAnswer", "newPassword"],
+                  "properties": {
+                    "email": { "type": "string", "format": "email" },
+                    "securityAnswer": { "type": "string" },
+                    "newPassword": { "type": "string", "format": "password" }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": { "description": "Password reset successful" },
+            "400": { "description": "Reset failed" }
+          }
+        }
+      },
+      "/api/transactions": {
+        "get": {
+          "tags": ["Transactions"],
+          "summary": "Get all transactions",
+          "responses": {
+            "200": {
+              "description": "List of transactions",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": { "$ref": "#/components/schemas/Transaction" }
+                  }
+                }
+              }
+            },
+            "401": { "description": "Unauthorized" }
+          }
+        },
+        "post": {
+          "tags": ["Transactions"],
+          "summary": "Create transaction",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["type", "amount", "category", "date"],
+                  "properties": {
+                    "type": { "type": "string", "enum": ["income", "expense"] },
+                    "amount": { "type": "number" },
+                    "category": { "type": "string" },
+                    "description": { "type": "string" },
+                    "date": { "type": "string", "format": "date" }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": { 
+              "description": "Transaction created",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/Transaction" }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": ["Transactions"],
+          "summary": "Update transaction",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["id"],
+                  "properties": {
+                    "id": { "type": "string" },
+                    "type": { "type": "string" },
+                    "amount": { "type": "number" },
+                    "category": { "type": "string" },
+                    "description": { "type": "string" },
+                    "date": { "type": "string", "format": "date" }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": { "description": "Transaction updated" }
+          }
+        },
+        "delete": {
+          "tags": ["Transactions"],
+          "summary": "Delete transaction",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "query",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "200": { "description": "Transaction deleted" },
+            "404": { "description": "Not found" }
+          }
+        }
+      },
+      "/api/savings": {
+        "get": {
+          "tags": ["Savings"],
+          "summary": "Get savings goals",
+          "responses": {
+            "200": {
+              "description": "List of goals",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": { "$ref": "#/components/schemas/SavingsGoal" }
+                  }
+                }
+              }
+            },
+            "401": { "description": "Unauthorized" }
+          }
+        },
+        "post": {
+          "tags": ["Savings"],
+          "summary": "Create savings goal",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["name", "targetAmount", "currentAmount"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "targetAmount": { "type": "number" },
+                    "currentAmount": { "type": "number" },
+                    "deadline": { "type": "string", "format": "date" },
+                    "isCompleted": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": { 
+              "description": "Goal created",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/SavingsGoal" }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": ["Savings"],
+          "summary": "Update savings goal",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["id", "updates"],
+                  "properties": {
+                    "id": { "type": "string" },
+                    "updates": {
+                      "type": "object",
+                      "properties": {
+                        "name": { "type": "string" },
+                        "targetAmount": { "type": "number" },
+                        "currentAmount": { "type": "number" },
+                        "deadline": { "type": "string" },
+                        "isCompleted": { "type": "boolean" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": { "description": "Goal updated" }
+          }
+        },
+        "delete": {
+          "tags": ["Savings"],
+          "summary": "Delete savings goal",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "query",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "200": { "description": "Goal deleted" }
+          }
+        }
+      },
+      "/api/budget": {
+        "get": {
+          "tags": ["Budget"],
+          "summary": "Get budget",
+          "responses": {
+            "200": { 
+              "description": "Budget data",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/BudgetLimit" }
+                }
+              }
+            },
+            "401": { "description": "Unauthorized" }
+          }
+        },
+        "post": {
+          "tags": ["Budget"],
+          "summary": "Set budget",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["totalBudget", "dailyLimit", "startDate", "endDate"],
+                  "properties": {
+                    "totalBudget": { "type": "number" },
+                    "dailyLimit": { "type": "number" },
+                    "startDate": { "type": "string", "format": "date" },
+                    "endDate": { "type": "string", "format": "date" },
+                    "isActive": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": { "description": "Budget saved" }
+          }
+        }
+      },
+      "/api/backup": {
+        "get": {
+          "tags": ["Data"],
+          "summary": "Export data",
+          "responses": {
+            "200": { "description": "JSON backup file" },
+            "401": { "description": "Unauthorized" }
+          }
+        }
+      },
+      "/api/import": {
+        "post": {
+          "tags": ["Data"],
+          "summary": "Import data",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Backup JSON structure"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": { "description": "Import successful" },
+            "400": { "description": "Invalid file" }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "User": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "fullName": { "type": "string" },
+            "avatarUrl": { "type": "string", "nullable": true },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "updatedAt": { "type": "string", "format": "date-time" }
+          }
+        },
+        "Transaction": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "userId": { "type": "string" },
+            "type": { "type": "string" },
+            "amount": { "type": "number" },
+            "category": { "type": "string" },
+            "description": { "type": "string", "nullable": true },
+            "date": { "type": "string", "format": "date-time" },
+            "createdAt": { "type": "string", "format": "date-time" }
+          }
+        },
+        "BudgetLimit": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "userId": { "type": "string" },
+            "totalBudget": { "type": "number" },
+            "dailyLimit": { "type": "number" },
+            "startDate": { "type": "string", "format": "date-time" },
+            "endDate": { "type": "string", "format": "date-time" },
+            "isActive": { "type": "boolean" },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "updatedAt": { "type": "string", "format": "date-time" }
+          }
+        },
+        "SavingsGoal": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "userId": { "type": "string" },
+            "name": { "type": "string" },
+            "targetAmount": { "type": "number" },
+            "currentAmount": { "type": "number" },
+            "deadline": { "type": "string", "format": "date-time", "nullable": true },
+            "isCompleted": { "type": "boolean" },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "updatedAt": { "type": "string", "format": "date-time" }
+          }
+        }
+      },
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "JWT"
+        }
+      }
+    }
+  }

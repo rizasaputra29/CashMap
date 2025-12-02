@@ -32,12 +32,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Cek jika user yang SUDAH login mencoba akses halaman login/register
-  if (userId && (pathname.startsWith('/auth/login') || pathname.startsWith('/auth/register'))) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
-  }
+  // REMOVED: Logic that prevents logged-in users from accessing login/register pages
+  // The original code redirected to /dashboard if userId existed and path started with /auth/login or /auth/register.
+  // This section is intentionally removed to allow access.
 
   // --- B. PROTEKSI API ROUTE ---
 
